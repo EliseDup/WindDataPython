@@ -9,24 +9,27 @@ from scipy.special import gammainc
 
 def main():
      # Load capacity factors and area of each cell
-     data = genfromtxt('../WindPotential/world_c_k', delimiter='\t', dtype=None)
+     
+     data = genfromtxt('../WindPotential/inputs', delimiter='\t', dtype=None)
+     #res = genfromtxt('../model_data/data0_75', delimiter='\t', dtype=None)
      
      lats = data[:, 0]; lon = data[:, 1]
      c = data[:, 2]; k = data[:, 3];
      totalArea = data[:, 4]; suitableArea = data[:, 5];
      # In MWh
-     embodiedE = data[:, 6]
+     embodiedE = data[:, 6]; operationE = data[:, 7]; availFactor = data[:,8]; dissipation = data[:,9];
      n = len(lats)
-     output = open('res_world_net_energy', 'w')
-     for i in range(0, n):        
-        if(suitableArea[i] > 0):
-            output.write(str(lats[i]) + '\t' + str(lon[i]))
-            if i % 1000 == 0: print i
-            for e in np.linspace(5,12,8):
-                res = maximizeNetEnergy(e,c[i], k[i], suitableArea[i], embodiedE[i])
-                output.write('\t' + str(res[0]) + '\t'+  str(res[1]) + '\t' + str(res[3]))
-            output.write('\n')
      
+     output = open('test', 'w')
+     for i in range(0, n): 
+      if i % 1000 == 0: print i
+      output.write(str(lats[i]) + '\t' + str(lon[i]))
+      if(suitableArea[i] > 0):
+        for e in np.linspace(0,20,41):
+            res = maximizeNetEnergy(e,c[i], k[i], suitableArea[i], embodiedE[i],operationE[i],availFactor[i],dissipation[i])
+            output.write('\t' + str(res[0]) + '\t'+  str(res[1]) + '\t' + str(res[2]))
+      output.write('\n')
+                    
      output.close()
 
 # c = installed capacity density; rp = rated power; d = rotor diameter
@@ -40,32 +43,44 @@ def arrayEfficiency(c, rp, d):
      # Gustavson extrapolation for arrays of 50x50 wind turbines 
     a = 0.9838; b = 42.5681;
     return a * math.exp(-b * lam(c, rp, d))
+def arrayEfficiencyNInf(n): 
+     # Gustavson extrapolation for arrays of 50x50 wind turbines 
+    a = 0.9619; b = 88.9204;
+    return a * math.exp(-b * math.pi / (4*n*n))
 
 def arrayEfficiencyN(n):
     a = 0.9838; b = 42.5681;
     return a * math.exp(-b * math.pi / (4*n*n))
 
-def capacityFactor(k, c, vr):
+def capacityFactor(c, k, vr):
     vf = 25.0; vc = 3.0;
     return -math.exp(-math.pow(vf/c,k)) + (3*math.pow(c,3)*math.gamma(3.0/k) / (k*(math.pow(vr,3) - math.pow(vc,3)))) * (gammainc(3.0/k,math.pow(vr/c,k)) - gammainc(3.0/k,math.pow(vc/c,k)))
 
-def maximizeNetEnergy(eroi_min, c, k, area, embodiedEnergy1MW, cp=0.5):
-    # W/m^2 == MW/km^2
-    def installedCapacityDensity(x):
-        return (0.5*cp*1.225*math.pi/4.0*math.pow(x[0],3)) / math.pow(x[1],2)
+def installedCapacityDensity(vr, n, cp=0.5):
+    return (0.5*cp*1.225*math.pi/4.0*math.pow(vr,3)) / math.pow(n,2)
+
+def eroi(c, k, vr, n, embodiedEnergy1MW, operationE, area, availFactor):
+    mw = installedCapacityDensity(vr, n) * area
+    out = mw * energyPerYear1MW(c, k, vr, n, availFactor) * 25
+    return out / (mw*embodiedEnergy1MW+out*operationE)
+
+def energyPerYear1MW(c, k, vr, n, availFactor):
+    return capacityFactor(c, k, vr)*arrayEfficiencyNInf(n)*availFactor*365*24
+
+def productionDensity(c, k, vr, n, availFactor):
+    return installedCapacityDensity(vr,n)*capacityFactor(c, k, vr)*arrayEfficiencyNInf(n)*availFactor
+
+def maximizeNetEnergy(eroi_min, c, k, area, embodiedEnergy1MW, operationE, availFactor, dissipation, cp=0.5):
     # x = (rated wind speed, turbine spacing n)
     def net_energy(x):
-        if -eroi(x) >= eroi_min:
-            return -(area * installedCapacityDensity(x) * (capacityFactor(k, c, x[0])*arrayEfficiencyN(x[1])*365*24*25 - embodiedEnergy1MW))
+        if ((eroi(c, k, x[0], x[1], embodiedEnergy1MW, operationE, area, availFactor) >= eroi_min)):# & (productionDensity(c,k,x[0],x[1],availFactor) <= dissipation)): #1.0)):
+            return -(area * installedCapacityDensity(x[0],x[1]) * (energyPerYear1MW(c, k, x[0], x[1], availFactor)*25*(1-operationE) - embodiedEnergy1MW))
         else:
             return 1000
         
-    def eroi(x):
-        return -(capacityFactor(k, c, x[0])*365*24*25*arrayEfficiencyN(x[1]) / embodiedEnergy1MW)
-    
-    res = minimize(net_energy, x0=(8,20), bounds=[(8.0,14.0),(1, 50)])  # options={'disp': True})
-    
-    return (res.x[0], res.x[1], -eroi(res.x), net_energy(res.x)<1000)
+    res = minimize(net_energy, x0=(10,20), bounds=[(10.0,16.0),(1, 20)])  # options={'disp': True})
+        
+    return (res.x[0], res.x[1], eroi(c, k, res.x[0],res.x[1],embodiedEnergy1MW,operationE,area,availFactor)>=eroi_min)
 
 # All in km^2 and MW ?
 def maximizeOneDensity(eroi_min, cf, area, diameters, ratedPower, embodiedEnergy1MW):

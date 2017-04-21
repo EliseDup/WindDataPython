@@ -10,14 +10,23 @@ from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
 
-name = '../WindPotential/world_c_k'
-# 4 = wind at 10 metres, 5 = wind at 80 metres onshore and 90 metres offshore
-index = 7
+name = '../WindPotential/eea'
+
+index = 2
 
 def main():
-    plotData(name, index)
-
-def plotData(csvFile, index):
+    #plotData(name, index)
+    #plotData(name, 2, "eroi", "EROI")
+    eroi = (2,5,8,10,12)
+    for i in range(0,5):
+        print i
+        plotData(name, i+2, "eu_gwi"+str(eroi[i]), "Installed Capacity [GW]")
+        plotData(name, i+7, "eu_wi"+str(eroi[i]), "Installed Capacity Density [Wi/m2]")
+        plotData(name, i+12, "eu_eroi"+str(eroi[i]), "EROI")
+    
+    print "Hello"
+    
+def plotData(csvFile, index, output, xLabel, show=False):
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     # data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     #### data preparation 
@@ -37,14 +46,19 @@ def plotData(csvFile, index):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(min(values)+0.01, max(values)+0.01
-                                                      , 2, endpoint=True), tri=True ) #, latlon=True)
+    cs = map.contourf(lons, lats, values, np.linspace(0.01, max(values)+0.01
+                                                      , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
-    #cbar.set_label('Mean Wind Speed at 125 m [m/s]')
-    #cbar.set_ticks(np.linspace(0, 15, 7))
-    #plt.savefig('wind125m' + '.png', dpi=250, bbox_inches='tight')
-    plt.show()
-    # return
+    cbar.set_label(xLabel)
+    cbar.set_ticks(np.linspace(0, math.ceil(max(values)), math.ceil(max(values))*2+1))
+    
+    if show: 
+        plt.show()
+    else :
+        plt.savefig(output + '.png', dpi=250, bbox_inches='tight')
+        plt.close()
+        
+    return
 
 if __name__ == "__main__":
     sys.exit(main())
