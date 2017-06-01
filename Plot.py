@@ -9,24 +9,17 @@ import scipy.interpolate
 from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
+solarFolder = '../resources/era_interim_data/solar/'
 
-name = '../WindPotential/eea'
+name = solarFolder+'netClearSky40years' #../WindPotential/res'
 
 index = 2
 
 def main():
-    #plotData(name, index)
-    #plotData(name, 2, "eroi", "EROI")
-    eroi = (2,5,8,10,12)
-    for i in range(0,5):
-        print i
-        plotData(name, i+2, "eu_gwi"+str(eroi[i]), "Installed Capacity [GW]")
-        plotData(name, i+7, "eu_wi"+str(eroi[i]), "Installed Capacity Density [Wi/m2]")
-        plotData(name, i+12, "eu_eroi"+str(eroi[i]), "EROI")
-    
+    plotData(name,index)
     print "Hello"
     
-def plotData(csvFile, index, output, xLabel, show=False):
+def plotData(csvFile, index, output='test', xLabel="", show=True):
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     # data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     #### data preparation 
@@ -46,11 +39,11 @@ def plotData(csvFile, index, output, xLabel, show=False):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(0.01, max(values)+0.01
+    cs = map.contourf(lons, lats, values, np.linspace(0.0, max(values)+0.01
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.linspace(0, math.ceil(max(values)), math.ceil(max(values))*2+1))
+    cbar.set_ticks(np.linspace(0, 100,5)) #math.ceil(max(values)), math.ceil(max(values))*2+1))
     
     if show: 
         plt.show()

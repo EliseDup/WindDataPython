@@ -11,10 +11,9 @@ VERBOSE = 1  # verbose error reporting
 def main():
     speedToFile("../ressources/wind/europe5years",50,50)
     
-
-def gribToFile(name):
+def gribToFile(name, data_name):
     grib_data = pygrib.open(name +'.grib')
-    data, lats, lons = grib_data.message(1).data()
+    data, lats, lons = grib_data.select(name=data_name)
     res = open(name, 'w')
     for i in range(0, len(lats)):
         for j in range(0, len(lats[0])):
@@ -24,7 +23,6 @@ def gribToFile(name):
             
     res.close()
     return
-
 
 def speedToFile(name, i, j):
     grib_data = pygrib.open(name +'.grib')
