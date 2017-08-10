@@ -15,16 +15,9 @@ from osgeo import osr
 from LandCover import latLonToPixel
 from LandCover import value
 
-
-name = '../test'
-    
 def main():
-    gribToFile('dec2016')
-    #detailedLandCover('../test.txt', '../res.txt', 0.75, 15)
-    #computeMeanData(name, 'U component of wind', 'V component of wind') 
-    #computeLandCover(name, name+'lc', 0.5)
-    #computeValueFromTiff(name+'lc', name+'sea','../resources/elevation/seaLevel.tif')
-    #computeValueFromTiff(name+'sea', name+'coast','../resources/coastDistance.tif')
+    computeValueFromTiff('../grid', '../grid_sea','../resources/elevation/seaLevel.tif', 0.75, 75)
+    computeValueFromTiff('../grid', '../grid_coast','../resources/coastDistance.tif', 0.75, 75)
    
 def gribToFile(name):
     grib_data = pygrib.open(name +'.grib')
@@ -39,7 +32,7 @@ def gribToFile(name):
     res.close()
     return
     
-def computeValueFromTiff(fromFile, toFile, tiffFile):
+def computeValueFromTiff(fromFile, toFile, tiffFile, resolution, n):
     # sea = 'ressources/seaLevel.tif'
     # register all of the drivers
     gdal.AllRegister()
@@ -47,20 +40,27 @@ def computeValueFromTiff(fromFile, toFile, tiffFile):
     ds = gdal.Open(tiffFile, GA_ReadOnly)
     rows = ds.RasterYSize;
     cols = ds.RasterXSize;
-    res = open('results/'+toFile, 'w')
-    with  open('results/'+fromFile) as f:
+    res = open(toFile, 'w')
+    with  open(fromFile) as f:
         for line in f:
             values = line.split("\t")
             lat = float(values[0]); long = float(values[1]);
-            # First try CLC
-            pixel = latLonToPixel(ds, [lat, long], True) 
-            if(pixel[0] >= 0 and pixel[1] >= 0 and pixel[0] < cols and pixel[1] < rows): 
-                level = value(ds, pixel)
-            else: level = "NA"
-        
-            if(level != "NA"):
-                res.write(line.split("\n")[0]);res.write("\t");
-                res.write(str(level));res.write("\n");
+            latStart = lat-resolution
+            lonStart = long-resolution
+            arcsec = resolution / n
+            mean = 0
+            nObs = 0
+            for i in range(0,n):
+                for j in range(0,n):
+                    latIt = latStart + i*arcsec
+                    lonIt = lonStart + j*arcsec
+                    pixel = latLonToPixel(ds, [latIt, lonIt], False)
+                    if(pixel[0] >= 0 and pixel[1] >= 0 and pixel[0] < cols and pixel[1] < rows): 
+                        mean = mean + value(ds, pixel)
+                        nObs = nObs + 1
+            
+            res.write(line.split("\n")[0]);res.write("\t");
+            res.write(str(mean));res.write("\t");res.write(str(nObs));res.write("\n");
                 
             
     res.close()  

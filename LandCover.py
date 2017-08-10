@@ -5,7 +5,8 @@ from osgeo import osr
 from numpy import zeros
 
 def main():
-    detailedLandCover("../WindPotential/grid_1deg", "grid1deg_25x25", 1.0, 25)
+    detailedLandCover('../grid', '../grid_lc', 0.75, 75)
+    # detailedLandCover("../WindPotential/grid_1deg", "grid1deg_25x25", 1.0, 25)
 
 # Function to associate 3 different land cover types to a grid cell of given center (latitude,longitude)
 def computeLandCover(fromFile, toFile, resolution):
@@ -80,7 +81,7 @@ def computeLandCover(fromFile, toFile, resolution):
     res.close()
 
 def detailedLandCover(fromFile, toFile, resolution, n):
-    globCover = 'Globcover/GLOBCOVER_L4_200901_200912_V2.3.tif'
+    globCover = '../resources/landcover/globCover/GLOBCOVER_L4_200901_200912_V2.3.tif'
     # register all of the drivers
     gdal.AllRegister()
     # open the image
@@ -97,7 +98,7 @@ def detailedLandCover(fromFile, toFile, resolution, n):
         for line in f:
             pts = pts +1
             if pts%1000 == 0: print "Progress",pts
-            values = line.split(",")
+            values = line.split("\t")
             lat = float(values[0]); long = float(values[1]);
             latStart = lat-resolution
             lonStart = long-resolution

@@ -11,15 +11,14 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 solarFolder = '../resources/era_interim_data/solar/'
 
-name = solarFolder+'netClearSky40years' #../WindPotential/res'
+name = '../WindPotential/clearnessIndex'#solarFolder+'net40years' #../WindPotential/res'
 
 index = 2
-
 def main():
-    plotData(name,index)
+    plotData(name,index, output="clearnessIndex", xLabel="Clearness Index")
     print "Hello"
     
-def plotData(csvFile, index, output='test', xLabel="", show=True):
+def plotData(csvFile, index, output, xLabel="", show=False):
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     # data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     #### data preparation 
@@ -39,11 +38,11 @@ def plotData(csvFile, index, output='test', xLabel="", show=True):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(0.0, max(values)+0.01
+    cs = map.contourf(lons, lats, values, np.linspace(0.01, max(values)+0.01
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.linspace(0, 100,5)) #math.ceil(max(values)), math.ceil(max(values))*2+1))
+    cbar.set_ticks(np.linspace(0, 1, 11)) #0.0,math.ceil(max(values)), math.ceil(max(values))*2+1))
     
     if show: 
         plt.show()

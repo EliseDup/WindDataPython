@@ -9,13 +9,15 @@ from ncepgrib2 import dump
 VERBOSE = 1  # verbose error reporting
 windU = '10 metre U wind component'
 windV = '10 metre V wind component'
+solarDwn = 'Surface solar radiation downwards'
 solarNet = 'Surface net solar radiation'
 solarNetClearSky = 'Surface net solar radiation, clear sky'
 eraFolder = '../resources/era_interim_data/'
 
 def main():
-    writeMeanByMonth(eraFolder+'solar/netClearSky_40years', 'netClearSky40yearsByMonth', solarNetClearSky, 24 * 60 * 60)
-    writeMean(eraFolder+'solar/netClearSky_40years', 'netClearSky40years', solarNetClearSky, 24 * 60 * 60)
+    computeMeanWind('europe_level57', 57, True, False)
+    #writeMeanByMonth(eraFolder+'solar/radiationDwn_40years', 'radiationDwn_40yearsByMonth', solarDwn, 24 * 60 * 60)
+    #writeMean(eraFolder+'solar/radiationDwn_40years', 'radiationDwn_40years', solarDwn, 24 * 60 * 60)
 
 def getComponent(gribFile, componentName):
     return pygrib.open(gribFile + '.grib').select(name=componentName)
@@ -151,16 +153,18 @@ def plotData(data, lats, lons):
 # From observations for several years, we would like to compute the mean values of wind speed for each location
 # and write that in a new grib file
 # We have to have a grib file with only value for U and V wind component
-def computeMeanWind(fileName, write, plot):
-    files = ('2007_2008', '2009_2010', '2011_2012', '2013_2014', '2015_2016')
+def computeMeanWind(outputName, level=57, write=True, plot=False):
+    # files = ('2007_2008', '2009_2010', '2011_2012', '2013_2014', '2015_2016')
+    files = ('europe2012','europe2013','europe2014','europe2015','europe2016') # ('2012','2013','2014','2015','2016'),'europe2014','europe2014'
+    folder = ('/Users/Elise/Desktop/wind_eu/')
     nFiles = 5
     uComponents = list()
     vComponents = list()
     
     for f in files:
-        grib_data = pygrib.open('../resources/wind/modelsLevel58/' + f + '.grib')
-        uComponents.append(grib_data.select(name='U component of wind'))  # To the EAST
-        vComponents.append(grib_data.select(name='V component of wind'))  # To the NORTH
+        grib_data = pygrib.open(folder + f + '.grib')
+        uComponents.append(grib_data.select(level=level, name='U component of wind'))  # To the EAST
+        vComponents.append(grib_data.select(level=level, name='V component of wind'))  # To the NORTH
         
         print 'Size', f, '-', grib_data.messages
     
@@ -208,7 +212,7 @@ def computeMeanWind(fileName, write, plot):
     #    for j in range(0, 10):#len(lats[i])):
     #            standardDeviation[i][j] = math.sqrt(standardDeviation[i][j] / (nObs[i][j]))
                 
-    if(write): writeData('results/' + fileName, [meanU, meanV, meanWindSpeed, standardDeviation, nObs], lats, lons);
+    if(write): writeData('results/' + outputName, [meanU, meanV, meanWindSpeed, standardDeviation, nObs], lats, lons);
     if(plot): plotData(meanWindSpeed, lats, lons);
     
     return
