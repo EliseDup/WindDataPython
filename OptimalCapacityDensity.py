@@ -10,7 +10,7 @@ from scipy.special import gammainc
 def main():
      # Load capacity factors and area of each cell
      
-     data = genfromtxt('../WindPotential/2000m_inputs', delimiter='\t', dtype=None)
+     data = genfromtxt('../WindPotentialScala/opti_inputs', delimiter='\t', dtype=None)
      #res = genfromtxt('../model_data/data0_75', delimiter='\t', dtype=None)
      
      lats = data[:, 0]; lon = data[:, 1]
@@ -20,12 +20,12 @@ def main():
      embodiedE = data[:, 6]; operationE = data[:, 7]; availFactor = data[:,8]; dissipation = data[:,9]; airDensity = data[:, 10]
      n = len(lats)
      
-     output = open('test', 'w')
+     output = open('res_1_20_by0_5_1We', 'w')
      for i in range(0, n): 
       if i % 1000 == 0: print i
       output.write(str(lats[i]) + '\t' + str(lon[i]))
       if(suitableArea[i] > 0):
-        for e in np.linspace(0,20,41):
+        for e in np.linspace(1,20,39):
             res = maximizeNetEnergy(e, c[i], k[i], suitableArea[i], embodiedE[i],operationE[i],availFactor[i],dissipation[i],airDensity[i])
             output.write('\t' + str(res[0]) + '\t'+  str(res[1]) + '\t' + str(res[2]))
       output.write('\n')
@@ -74,7 +74,7 @@ def productionDensity(c, k, vr, n, availFactor, airDensity):
 def maximizeNetEnergy(eroi_min, c, k, area, embodiedEnergy1MW, operationE, availFactor, dissipation, airDensity, cp=0.5):
     # x = (rated wind speed, turbine spacing n)
     def net_energy(x):
-        if ((eroi(c, k, x[0], x[1], embodiedEnergy1MW, operationE, area, availFactor,airDensity) >= eroi_min) & (productionDensity(c,k,x[0],x[1],availFactor,airDensity) <= dissipation)): #1.0)):
+        if ((eroi(c, k, x[0], x[1], embodiedEnergy1MW, operationE, area, availFactor,airDensity) >= eroi_min) & (productionDensity(c,k,x[0],x[1],availFactor,airDensity) <= 1.0)): #<= 1.5*dissipation)): #1.0)):
             return -(area * installedCapacityDensity(x[0],x[1],airDensity) * (energyPerYear1MW(c, k, x[0], x[1], availFactor)*25*(1-operationE) - embodiedEnergy1MW))
         else:
             return 1000

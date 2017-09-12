@@ -16,8 +16,8 @@ from LandCover import latLonToPixel
 from LandCover import value
 
 def main():
-    computeValueFromTiff('../grid', '../grid_sea','../resources/elevation/seaLevel.tif', 0.75, 75)
-    computeValueFromTiff('../grid', '../grid_coast','../resources/coastDistance.tif', 0.75, 75)
+    #computeValueFromTiff('../grid', '../grid_sea','../resources/elevation/seaLevel.tif', 0.75, 15)
+    computeValueFromTiff('../grid', '../grid_coast','../resources/coast_distance/coastDistance.tif', 0.75, 15)
    
 def gribToFile(name):
     grib_data = pygrib.open(name +'.grib')
@@ -45,6 +45,7 @@ def computeValueFromTiff(fromFile, toFile, tiffFile, resolution, n):
         for line in f:
             values = line.split("\t")
             lat = float(values[0]); long = float(values[1]);
+            # print lat, " , ", long
             latStart = lat-resolution
             lonStart = long-resolution
             arcsec = resolution / n
