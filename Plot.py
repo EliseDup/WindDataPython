@@ -11,11 +11,11 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 solarFolder = '../resources/era_interim_data/solar/'
 
-name = '../WindPotentialScala/US_CAN'#solarFolder+'net40years' #../WindPotential/res'
+name = '../WindPotentialScala/annual_k'#solarFolder+'net40years' #../WindPotential/res'
 
-index = 3
+index = 2
 def main():
-    plotData(name,index, output="test", xLabel="")
+    plotData(name,index, output="results/irradiation_year", xLabel="")
     print "Hello"
     
 def plotData(csvFile, index, output, xLabel="", show=True):
@@ -39,11 +39,11 @@ def plotData(csvFile, index, output, xLabel="", show=True):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(0.01, 1.1 #max(values)+0.01
+    cs = map.contourf(lons, lats, values, np.linspace(0.01, 1.0# max(values)+0.01
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks([0.0,0.5,1,1.5,2,2.5]) # math.ceil(max(values)), math.ceil(max(values))*2+1)
+    #cbar.set_ticks(np.linspace(0,3500,8)) # math.ceil(max(values)), math.ceil(max(values))*2+1)
     
     if show: 
         plt.show()

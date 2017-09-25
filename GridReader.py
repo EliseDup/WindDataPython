@@ -9,7 +9,8 @@ from ncepgrib2 import dump
 VERBOSE = 1  # verbose error reporting
 
 def main():
-    speedToFile("/Users/Elise/Desktop/wind2015", 'U component of wind', 'V component of wind', 1, 1,)
+    gribToFile("../resources/era_interim_data/solar/")
+    #speedToFile("/Users/Elise/Desktop/wind2015", 'U component of wind', 'V component of wind', 1, 1,)
     
 def gribToFile(name, data_name):
     grib_data = pygrib.open(name + '.grib')
