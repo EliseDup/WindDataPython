@@ -11,14 +11,14 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 solarFolder = '../resources/era_interim_data/solar/'
 
-name = '../WindPotentialScala/annual_k'#solarFolder+'net40years' #../WindPotential/res'
-
-index = 2
+name = '../WindPotentialScala/wi_5_8_12'#solarFolder+'net40years' #../WindPotential/res'
+# sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
+index = 4
 def main():
-    plotData(name,index, output="results/irradiation_year", xLabel="")
+    plotData(name,index, output="results/eu_wi12", xLabel="Installed Capacity Density [Wi/m2]")
     print "Hello"
     
-def plotData(csvFile, index, output, xLabel="", show=True):
+def plotData(csvFile, index, output, xLabel="", show=False):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     # data = genfromtxt(csvFile, delimiter='\t', dtype=None)
@@ -39,16 +39,16 @@ def plotData(csvFile, index, output, xLabel="", show=True):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(0.01, 1.0# max(values)+0.01
+    cs = map.contourf(lons, lats, values, np.linspace(0.01, max(values)+0.01
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    #cbar.set_ticks(np.linspace(0,3500,8)) # math.ceil(max(values)), math.ceil(max(values))*2+1)
+    cbar.set_ticks(np.linspace(0,3,7)) # math.ceil(max(values)), math.ceil(max(values))*2+1)
     
     if show: 
         plt.show()
     else :
-        plt.savefig(output + '.png', dpi=250, bbox_inches='tight')
+        plt.savefig(output + '.pdf', dpi=250, bbox_inches='tight')
         plt.close()
         
     return
