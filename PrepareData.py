@@ -6,7 +6,7 @@
 import os, sys, time, gdal, pygrib
 import numpy as np
 
-from MeanWindSpeed import computeMeanWind, computeMeanData, computeMeanDissipation
+#from MeanWindSpeed import computeMeanWind, computeMeanData, computeMeanDissipation
 from LandCover import computeLandCover, detailedLandCover
 from Plot import plotData
 from gdalconst import *
@@ -17,7 +17,7 @@ from LandCover import value
 
 def main():
     #computeValueFromTiff('../grid', '../grid_sea','../resources/elevation/seaLevel.tif', 0.75, 15)
-    computeValueFromTiff('../grid', '../grid_coast','../resources/coast_distance/coastDistance.tif', 0.75, 15)
+    computeValueFromTiff('grid', 'grid_coast','../resources/coast_distance/coastDistance.tif', 0.75, 15)
    
 def gribToFile(name):
     grib_data = pygrib.open(name +'.grib')
