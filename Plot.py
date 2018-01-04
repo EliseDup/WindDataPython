@@ -1,5 +1,4 @@
 import sys
-import pygrib
 from numpy import ndarray
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
@@ -10,15 +9,26 @@ import scipy.interpolate
 from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
+solarFolder = '../resources/era_interim_data/solar/'
 
-def plotData(csvFile, index):
-    data = genfromtxt('ressources/results/' + csvFile, delimiter='\t', dtype=None)
+name = '../WindPotentialScala/wi_5_8_12'#solarFolder+'net40years' #../WindPotential/res'
+# sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
+index = 4
+def main():
+    plotData(name,index, output="results/eu_wi12", xLabel="Installed Capacity Density [Wi/m2]")
+    print "Hello"
+    
+def plotData(csvFile, index, output, xLabel="", show=False):
+    
+    data = genfromtxt(csvFile, delimiter='\t', dtype=None)
+    # data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     #### data preparation 
     lats = data[:, 0] 
     # # lon => x 
     lons = data[:, 1] 
     # # values => z 
-    values = data[:, index] 
+    values = data[:, index]
+    print "Size :", len(lats)
     print "Lat Min :", min(lats), "Lat Max :", max(lats)
     print "Lon Min :", min(lons), "Lon Max :", max(lons)
     #### later in the defined map 
@@ -27,14 +37,21 @@ def plotData(csvFile, index):
     map.drawcoastlines()
     map.drawstates()
     map.drawcountries()
-    print "Maximum Speed ", max(values)
-    #clevs = [0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14]
-    # clevs = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
-    # clevs = [0,1000,1250,1500,2000,2500,3000,8000]
-    clevs = [44,45]
-    cs = map.contourf(lons, lats, values,clevs, latlon=True, tri=True)
+    # map.drawlsmask(land_color='coral',ocean_color='blue') 
+    print "Maximum ", max(values), " - Minimum ", min(values)
+    cs = map.contourf(lons, lats, values, np.linspace(0.01, max(values)+0.01
+                                                      , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
-    cbar.set_label('m/s')
-    plt.show()
+    cbar.set_label(xLabel)
+    cbar.set_ticks(np.linspace(0,3,7)) # math.ceil(max(values)), math.ceil(max(values))*2+1)
+    
+    if show: 
+        plt.show()
+    else :
+        plt.savefig(output + '.pdf', dpi=250, bbox_inches='tight')
+        plt.close()
+        
     return
 
+if __name__ == "__main__":
+    sys.exit(main())
