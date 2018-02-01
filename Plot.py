@@ -11,14 +11,14 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 solarFolder = '../resources/era_interim_data/solar/'
 
-name = '../WindPotentialScala/wi_5_8_12'#solarFolder+'net40years' #../WindPotential/res'
+name = '../resources/era_interim_data/solar/net40years'#solarFolder+'net40years' #../WindPotential/res'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 4
+index = 2
 def main():
-    plotData(name,index, output="results/eu_wi12", xLabel="Installed Capacity Density [Wi/m2]")
+    plotData(name,index, output="", xLabel="")
     print "Hello"
     
-def plotData(csvFile, index, output, xLabel="", show=False):
+def plotData(csvFile, index, output, xLabel="", show=True):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     # data = genfromtxt(csvFile, delimiter='\t', dtype=None)
@@ -43,7 +43,7 @@ def plotData(csvFile, index, output, xLabel="", show=False):
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.linspace(0,3,7)) # math.ceil(max(values)), math.ceil(max(values))*2+1)
+    #cbar.set_ticks(math.ceil(max(values)), math.ceil(max(values))*2+1)
     
     if show: 
         plt.show()

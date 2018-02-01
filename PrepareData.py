@@ -16,7 +16,7 @@ from LandCover import latLonToPixel
 from LandCover import value
 
 def main():
-    #computeValueFromTiff('../grid', '../grid_sea','../resources/elevation/seaLevel.tif', 0.75, 15)
+    computeValueFromTiff('grid', 'grid_sea','../resources/elevation/seaLevel.tif', 0.75, 15)
     computeValueFromTiff('grid', 'grid_coast','../resources/coast_distance/coastDistance.tif', 0.75, 15)
    
 def gribToFile(name):
