@@ -11,11 +11,11 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 solarFolder = '../resources/era_interim_data/solar/'
 
-name = '../resources/era_interim_data/solar/net40years'#solarFolder+'net40years' #../WindPotential/res'
+name = 'dni'#solarFolder+'net40years' #../WindPotential/res'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
 index = 2
 def main():
-    plotData(name,index, output="", xLabel="")
+    plotData(name,index, output="", xLabel="DNI [kWh/m^2/day]")
     print "Hello"
     
 def plotData(csvFile, index, output, xLabel="", show=True):
