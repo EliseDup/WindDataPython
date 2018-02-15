@@ -11,21 +11,21 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 solarFolder = '../resources/era_interim_data/solar/'
 
-name = 'dni'#solarFolder+'net40years' #../WindPotential/res'
+name = 'solar_1deg'#solarFolder+'net40years' #../WindPotential/res'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 2
+index = 3
 def main():
-    plotData(name,index, output="", xLabel="DNI [kWh/m^2/day]")
+    plotData(name,index, output="dni_day", xLabel="Direct Normal Irradiance [kWh/m2/day]")
     print "Hello"
     
-def plotData(csvFile, index, output, xLabel="", show=True):
+def plotData(csvFile, index, output, xLabel="", show=False):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     # data = genfromtxt(csvFile, delimiter='\t', dtype=None)
     #### data preparation 
-    lats = data[:, 0] 
+    lats = data[:, 1] 
     # # lon => x 
-    lons = data[:, 1] 
+    lons = data[:, 0] 
     # # values => z 
     values = data[:, index]
     print "Size :", len(lats)
@@ -43,7 +43,7 @@ def plotData(csvFile, index, output, xLabel="", show=True):
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    #cbar.set_ticks(math.ceil(max(values)), math.ceil(max(values))*2+1)
+    cbar.set_ticks(np.arange(0,10,1))
     
     if show: 
         plt.show()
