@@ -7,9 +7,16 @@ import numpy as np
 import LandCover as lc
 import struct
 from numpy import genfromtxt
+
+# The fastest way to have the data from R (extraction from shp files)
+# and from python (extraction from tif files), is to first launch this code to have the grid
+# (i.e. all the couple (latitude,longitude) that are relevant (with value != 0), then
+# compute the value from the shp file with the grid (ex :Countrie.R), then run again this code with the correct countries.
+# (In scala or R directly the concatenation is taking forever)
+
 def main():
-    #computeIrradiance(3600,"solar_1deg")
-    computeIrradiance(180,"test")
+    computeIrradiance(3600,"solar_countries_1deg")
+    # computeIrradiance(180,"test")
       
 def readFile(name,globCover,output):
     res = open(output, 'w')
@@ -48,7 +55,7 @@ def computeIrradiance(arcsec, output):
     ghi = gdal.Open(file_ghi, GA_ReadOnly); dni = gdal.Open(file_dni, GA_ReadOnly); cover = gdal.Open(globCover, GA_ReadOnly)
     rows = ghi.RasterYSize; cols = ghi.RasterXSize;
 
-    countries = genfromtxt("../countries_0_05deg_3", delimiter="\t", dtype=str)
+    countries = genfromtxt("../countries_1deg", delimiter="\t", dtype=str)
     print(len(countries))
     k = 0
     for lat in range(-55,60):
