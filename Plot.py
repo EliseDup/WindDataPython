@@ -9,23 +9,22 @@ import scipy.interpolate
 from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
-solarFolder = '../resources/era_interim_data/solar/'
 
-name = 'solar_1deg'#solarFolder+'net40years' #../WindPotential/res'
+name = '../WindPotentialScala/efficiency'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
 index = 3
 def main():
-    plotData(name,index, output="dni_day", xLabel="Direct Normal Irradiance [kWh/m2/day]")
+    plotData(name,index, output="cspdensity", xLabel="CSP Power Density [We/m2]")
     print "Hello"
     
 def plotData(csvFile, index, output, xLabel="", show=False):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
-    # data = genfromtxt(csvFile, delimiter='\t', dtype=None)
-    #### data preparation 
-    lats = data[:, 1] 
+     #### data preparation 
+    lats = data[:, 0] 
     # # lon => x 
-    lons = data[:, 0] 
+    lons = data[:, 1] 
+    
     # # values => z 
     values = data[:, index]
     print "Size :", len(lats)
@@ -43,12 +42,14 @@ def plotData(csvFile, index, output, xLabel="", show=False):
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.arange(0,10,1))
+    cbar.set_ticks(np.arange(0,10,2))
     
     if show: 
         plt.show()
     else :
-        plt.savefig(output + '.pdf', dpi=250, bbox_inches='tight')
+        # High resolution
+        #plt.savefig(output + '.pdf', dpi=250, bbox_inches='tight')
+        plt.savefig(output + '.png', dpi=250, bbox_inches='tight')
         plt.close()
         
     return
