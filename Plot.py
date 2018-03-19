@@ -10,20 +10,20 @@ from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
 
-name = '../WindPotentialScala/efficiency'
+name = 'slope_0_5deg'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 3
+index = 2
 def main():
-    plotData(name,index, output="cspdensity", xLabel="CSP Power Density [We/m2]")
+    plotData(name,index, output="slope_geq45", xLabel="")
     print "Hello"
     
-def plotData(csvFile, index, output, xLabel="", show=False):
+def plotData(csvFile, index, output, xLabel="", show=True):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
      #### data preparation 
-    lats = data[:, 0] 
+    lats = data[:, 1] 
     # # lon => x 
-    lons = data[:, 1] 
+    lons = data[:, 0] 
     
     # # values => z 
     values = data[:, index]
@@ -42,7 +42,7 @@ def plotData(csvFile, index, output, xLabel="", show=False):
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.arange(0,10,2))
+    #cbar.set_ticks(np.arange(0,10,2))
     
     if show: 
         plt.show()

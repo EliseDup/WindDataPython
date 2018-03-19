@@ -17,13 +17,15 @@ file_ghi = '../resources/solar/GHI/GHI.tif'
 file_dni = '../resources/solar/DNI/DNI.tif'
 globCover = '../resources/landCover/globCover/GLOBCOVER_L4_200901_200912_V2.3.tif'
 coast_distance  = "../resources/coast_distance/coastDistance.tif"
-slopeCL8 = "../resources/slope/cl8_0_5"
-elevation = "../resources/slope/elev_0_5.tif"
+slopeCL8 = "../resources/slope/cl8_0_0833.tif"
+elevation = "../resources/slope/elev_0_0833.tif"
+slope_path = "../resources/slope/cl"
+
+protectedPath= "../resources/protected_areas/"
 
 def main():
-    computeGrid(1800, "grid_0_5deg")
-    checkSlopeToGrid("grid_0_5deg", 'test_Slope')
-    #addRResultsToGrid("grid_0_5deg", "../countries_0_5deg", "../WindPotentialScala/data_solar/grid_0_5deg")
+    print 'Hello'
+    #addRResultsToGrid("../resources/data_solar/0_1deg", protectedPath+"protected_0_1deg", "../resources/data_solar/0_1deg_protected")
     
 def computeGrid(arcres, finalOutput):
     readFile(file_ghi, "temp1", arcres)
@@ -50,8 +52,8 @@ def readFile(dataset, output, arcres = 1800, factor = 1.0, all = False):
                     pixel = lc.latLonToPixel(ds, [latIt, lonIt], False)
                     if(pixel[0] >= 0 and pixel[1] >= 0 and pixel[0] < cols and pixel[1] < rows):
                         value = lc.value(ds, pixel)
-                        if(not np.isnan(value)): res.write(str(lonIt) + "\t" + str(latIt) + "\t" + str(float(factor*value)) + "\n")
-                        elif all: res.write(str(lonIt) + "\t" + str(latIt) + "\t" + "0.0" + "\n")
+                        if(not np.isnan(value) and float(value)!=-9999): res.write(str(lonIt) + "\t" + str(latIt) + "\t" +str(float(factor*value)) + "\n")
+                        elif all: res.write(str(lonIt) + "\t" + str(latIt) + "\t"+ "0.0" + "\n")
     res.close()
 
 # Grid is a txt file with lat & lon in the two first column and other information after
@@ -65,11 +67,11 @@ def addToFile(grid, dataset, output, factor=1.0):
         for line in f:
             values = line.split("\t")
             outputFile.write(line.split("\n")[0]);outputFile.write("\t");
-            lat = float(values[0]); lon = float(values[1]);
+            lon = float(values[0]);lat = float(values[1]); 
             pixel = lc.latLonToPixel(ds, [lat, lon], False)
             if(pixel[0] >= 0 and pixel[1] >= 0 and pixel[0] < cols and pixel[1] < rows):
                 value = lc.value(ds, pixel)
-                if(not np.isnan(value)): outputFile.write(str(factor*value) + "\n")
+                if(not np.isnan(value) and float(value)!=-9999): outputFile.write(str(factor*value) + "\n")
                 else: outputFile.write('0.0' + "\n")
             else: outputFile.write('0.0' + "\n")
     f.close(); outputFile.close();
@@ -111,7 +113,7 @@ def addRResultsToGrid(grid, rFile, output):
             
     outputFile.close(); f.close();
     if(k != len(rData)): print "Incompatible Sizes", " -- ", len(rData), " != ", k
-                               
+                                    
 def computeIrradiance(arcsec, output, country, countryFile, all, protected, protectedFile):
     
     file_ghi = '../resources/solar/GHI/GHI.tif'
@@ -167,44 +169,57 @@ def computeIrradiance(arcsec, output, country, countryFile, all, protected, prot
 def addSlopeToGrid(grid, output):
     outputFile = open(output, 'w')
 
-    cl1 = gdal.Open("../resources/slope/cl1_0_5.tif", GA_ReadOnly)
-    cl2 = gdal.Open("../resources/slope/cl2_0_5.tif", GA_ReadOnly)
-    cl3 = gdal.Open("../resources/slope/cl3_0_5.tif", GA_ReadOnly)
-    lc.printInfo(cl1)
-    rows = cl1.RasterYSize; cols = cl1.RasterXSize;
+ #   cl1 = gdal.Open("../resources/slope/cl1_0_5.tif", GA_ReadOnly)
+ #   cl2 = gdal.Open("../resources/slope/cl2_0_5.tif", GA_ReadOnly)
+ #   cl3 = gdal.Open("../resources/slope/cl3_0_5.tif", GA_ReadOnly)
+    cl4 = gdal.Open("../resources/slope/cl4_0_0833.tif", GA_ReadOnly)
+    cl5 = gdal.Open("../resources/slope/cl5_0_0833.tif", GA_ReadOnly)
+    cl6 = gdal.Open("../resources/slope/cl6_0_0833.tif", GA_ReadOnly)
+    cl7 = gdal.Open("../resources/slope/cl7_0_0833.tif", GA_ReadOnly)
+    cl8 = gdal.Open("../resources/slope/cl8_0_0833.tif", GA_ReadOnly)
+    
+    lc.printInfo(cl4)
+    rows = cl4.RasterYSize; cols = cl4.RasterXSize;
     with  open(grid) as f:
         for line in f:
             outputFile.write(line.split("\n")[0]);outputFile.write("\t");
             values = line.split("\t")
-            lat = float(values[0]); lon = float(values[1]);
+            lat = float(values[1]); lon = float(values[0]);
             val = 0.0
-            pixel = lc.latLonToPixel(cl1, [lat, lon], False)
+            pixel = lc.latLonToPixel(cl4, [lat, lon], False)
             if(pixel[0] >= 0 and pixel[1] >= 0 and pixel[0] < cols and pixel[1] < rows):
-                val1 = lc.value(cl1, pixel); val2 = lc.value(cl2, pixel); val3 = lc.value(cl3, pixel); 
-                if(val1 != -9999): val = val + val1 / 100.0
-                if(val2 != -9999): val = val + val2 / 100.0
-                if(val3 != -9999): val = val + val3 / 100.0
-            
+                #val1 = lc.value(cl1, pixel); val2 = lc.value(cl2, pixel); val3 = lc.value(cl3, pixel); 
+                val4 = lc.value(cl4, pixel); val5 = lc.value(cl5, pixel); val6 = lc.value(cl6, pixel); val7 = lc.value(cl7, pixel);  val8 = lc.value(cl8, pixel); 
+                
+                #if(val1 != -9999): val = val + val1 / 1000.0
+                #if(val2 != -9999): val = val + val2 / 1000.0
+                #if(val3 != -9999): val = val + val3 / 1000.0
+                if(val4 != -9999): val = val + val4 / 100.0;
+                if(val5 != -9999): val = val + val5 / 100.0;
+                if(val6 != -9999): val = val + val6 / 100.0;
+                if(val7 != -9999): val = val + val7 / 100.0;
+                if(val8 != -9999): val = val + val8 / 100.0;
             outputFile.write(str(val) + "\n")
     f.close();                   
     outputFile.close()
-def checkSlopeToGrid(grid, output):
+    
+def checkSlopeToGrid(grid, output, factor = 1.0/100.0):
     outputFile = open(output, 'w')
 
-    cl1 = gdal.Open("../resources/slope/cl1_0_5.tif", GA_ReadOnly)
-    cl2 = gdal.Open("../resources/slope/cl2_0_5.tif", GA_ReadOnly)
-    cl3 = gdal.Open("../resources/slope/cl3_0_5.tif", GA_ReadOnly)
-    cl4 = gdal.Open("../resources/slope/cl4_0_5", GA_ReadOnly)
-    cl5 = gdal.Open("../resources/slope/cl5_0_5", GA_ReadOnly)
-    cl6 = gdal.Open("../resources/slope/cl6_0_5", GA_ReadOnly)
-    cl7 = gdal.Open("../resources/slope/cl7_0_5", GA_ReadOnly)
-    cl8 = gdal.Open("../resources/slope/cl8_0_5", GA_ReadOnly)
+    cl1 = gdal.Open("../resources/slope/cl1_0_0833.tif", GA_ReadOnly)
+    cl2 = gdal.Open("../resources/slope/cl2_0_0833.tif", GA_ReadOnly)
+    cl3 = gdal.Open("../resources/slope/cl3_0_0833.tif", GA_ReadOnly)
+    cl4 = gdal.Open("../resources/slope/cl4_0_0833.tif", GA_ReadOnly)
+    cl5 = gdal.Open("../resources/slope/cl5_0_0833.tif", GA_ReadOnly)
+    cl6 = gdal.Open("../resources/slope/cl6_0_0833.tif", GA_ReadOnly)
+    cl7 = gdal.Open("../resources/slope/cl7_0_0833.tif", GA_ReadOnly)
+    cl8 = gdal.Open("../resources/slope/cl8_0_0833.tif", GA_ReadOnly)
     
     lc.printInfo(cl1)
     rows = cl1.RasterYSize; cols = cl1.RasterXSize;
     with  open(grid) as f:
         for line in f:
-            outputFile.write(line.split("\n")[0]);outputFile.write("\t");
+            #outputFile.write(line.split("\n")[0]);outputFile.write("\t");
             values = line.split("\t")
             lat = float(values[0]); lon = float(values[1]);
             val = 0.0
@@ -214,16 +229,16 @@ def checkSlopeToGrid(grid, output):
                 val4 = lc.value(cl4, pixel); val5 = lc.value(cl5, pixel); val6 = lc.value(cl6, pixel); 
                 val7 = lc.value(cl7, pixel); val8 = lc.value(cl8, pixel); 
                 
-                if(val1 != -9999): val = val + val1 / 100.0
-                if(val2 != -9999): val = val + val2 / 100.0
-                if(val3 != -9999): val = val + val3 / 100.0
-                if(val4 != -9999): val = val + val4 / 100.0
-                if(val5 != -9999): val = val + val5 / 100.0
-                if(val6 != -9999): val = val + val6 / 100.0
-                if(val7 != -9999): val = val + val7 / 100.0
-                if(val8 != -9999): val = val + val8 / 100.0
+                if(val1 != -9999): val = val + val1 * factor
+                if(val2 != -9999): val = val + val2 * factor
+                if(val3 != -9999): val = val + val3 * factor
+                if(val4 != -9999): val = val + val4 * factor
+                if(val5 != -9999): val = val + val5 * factor
+                if(val6 != -9999): val = val + val6 * factor
+                if(val7 != -9999): val = val + val7 * factor
+                if(val8 != -9999): val = val + val8 * factor
             
-            outputFile.write(str(val) + "\n")
+            if(val!=0): outputFile.write(str(lat) + "\t" + str(lon) + "\t" +str(val) + "\n")
     f.close();                   
     outputFile.close()
                  
