@@ -10,20 +10,20 @@ from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
 
-name = 'slope_0_5deg'
+name = '../WindPotentialScala/slope'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 2
+index = 5
 def main():
-    plotData(name,index, output="slope_geq45", xLabel="")
+    plotData(name,index, output="slope_leq2", xLabel="% of area with slope < 2%")
     print "Hello"
     
 def plotData(csvFile, index, output, xLabel="", show=True):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
      #### data preparation 
-    lats = data[:, 1] 
+    lats = data[:, 0] 
     # # lon => x 
-    lons = data[:, 0] 
+    lons = data[:, 1] 
     
     # # values => z 
     values = data[:, index]
@@ -38,11 +38,11 @@ def plotData(csvFile, index, output, xLabel="", show=True):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(0.01, max(values)+0.01
+    cs = map.contourf(lons, lats, values, np.linspace(0.01, 100
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    #cbar.set_ticks(np.arange(0,10,2))
+    cbar.set_ticks(np.arange(0,100,20))
     
     if show: 
         plt.show()

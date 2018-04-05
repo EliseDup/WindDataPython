@@ -17,27 +17,36 @@ file_ghi = '../resources/solar/GHI/GHI.tif'
 file_dni = '../resources/solar/DNI/DNI.tif'
 globCover = '../resources/landCover/globCover/GLOBCOVER_L4_200901_200912_V2.3.tif'
 coast_distance  = "../resources/coast_distance/coastDistance.tif"
-slopeCL8 = "../resources/slope/cl8_0_0833.tif"
 elevation = "../resources/slope/elev_0_0833.tif"
 slope_path = "../resources/slope/cl"
 
 protectedPath= "../resources/protected_areas/"
+countriesPath= "../resources/countries/"
 
 def main():
     print 'Hello'
-    #addRResultsToGrid("../resources/data_solar/0_1deg", protectedPath+"protected_0_1deg", "../resources/data_solar/0_1deg_protected")
+    #computeGrid(1800,"test_total")
+    #addRResultsToGrid("test_total", countriesPath+"countries_0_5deg_total", "test_total_countries")
+    addRResultsToGrid("test_total_countries", protectedPath+"protected_0_5deg_total", "test_total_protected",true_false=True)
+    addSlopeClasses("test_total_protected","test_total_slopes")
     
 def computeGrid(arcres, finalOutput):
     readFile(file_ghi, "temp1", arcres)
     addToFile("temp1", file_dni,"temp")
     addToFile("temp", globCover,"temp1")
     addToFile("temp1", coast_distance,"temp")
-    addToFile("temp",elevation,"temp1")
-    addToFile("temp1", slopeCL8,"temp",factor=1.0/100.0)
-    addSlopeToGrid("temp", finalOutput)
+    addToFile("temp",elevation,finalOutput)
+   
+def addSlopeClasses(gridFile, output): 
+    addToFile(gridFile, slope_path+"1_0_0833.tif", "temp1")
+    for i in range(2,8):
+        j = i-1
+        print str(j), "TO", str(i)
+        addToFile("temp"+str(j), slope_path+str(i)+"_0_0833.tif", "temp"+str(i))
+    addToFile("temp7", slope_path+"8_0_0833.tif", output)
     
 # Read a tif file and print a file with 3 columns : latitude, longitude, and the corresponding value. The grid is computed with the resolution given in arcsecond !
-def readFile(dataset, output, arcres = 1800, factor = 1.0, all = False):
+def readFile(dataset, output, arcres = 1800, factor = 1.0, all = True):
     res = open(output, 'w')
     ds = gdal.Open(dataset, GA_ReadOnly)
     lc.printInfo(ds)
@@ -100,7 +109,7 @@ def readFileWithCover(name, globCover, output, arcres=1200):
                         #    valueCover = lc.value(cover, pixelCover)
                         #    res.write(str(lonIt) + "\t" + str(latIt) + "\t" + "0.0" + "\t" + str(valueCover) + "\n")
 
-def addRResultsToGrid(grid, rFile, output):
+def addRResultsToGrid(grid, rFile, output, with_nan = False, true_false = False):
     outputFile = open(output, 'w')
     rData = genfromtxt(rFile, delimiter="\t", dtype=str)
     print(len(rData))
@@ -108,12 +117,18 @@ def addRResultsToGrid(grid, rFile, output):
     with  open(grid) as f:
         for line in f:
             outputFile.write(line.split("\n")[0]);outputFile.write("\t");
-            outputFile.write(rData[k].replace('"', '') + "\n")
-            k = k + 1
+            if(with_nan and np.isnan(rData[k])): res ="NA"
+            elif(true_false): 
+                if(rData[k]=="FALSE"):res=0
+                else: res=1
+            else: res = rData[k].replace('"', '')
+            outputFile.write(str(res) + "\n")
+            k = k +1
             
     outputFile.close(); f.close();
     if(k != len(rData)): print "Incompatible Sizes", " -- ", len(rData), " != ", k
-                                    
+
+                                  
 def computeIrradiance(arcsec, output, country, countryFile, all, protected, protectedFile):
     
     file_ghi = '../resources/solar/GHI/GHI.tif'
