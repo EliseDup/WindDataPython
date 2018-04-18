@@ -12,12 +12,12 @@ from numpy import genfromtxt
 
 name = '../WindPotentialScala/slope'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 5
+index = 10
 def main():
-    plotData(name,index, output="slope_leq2", xLabel="% of area with slope < 2%")
+    plotData(name,index, output="sf_CSP", xLabel="% of area suitable for CSP plants",show=True)
     print "Hello"
     
-def plotData(csvFile, index, output, xLabel="", show=True):
+def plotData(csvFile, index, output, xLabel="", show=False):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
      #### data preparation 
@@ -38,11 +38,11 @@ def plotData(csvFile, index, output, xLabel="", show=True):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(0.01, 100
+    cs = map.contourf(lons, lats, values, np.linspace(min(values)+0.01, max(values)+0.01
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.arange(0,100,20))
+    cbar.set_ticks(np.arange(0,10,2))
     
     if show: 
         plt.show()
