@@ -19,16 +19,18 @@ globCover = '../resources/landCover/globCover/GLOBCOVER_L4_200901_200912_V2.3.ti
 coast_distance  = "../resources/coast_distance/coastDistance.tif"
 elevation = "../resources/slope/elev_0_0833.tif"
 slope_path = "../resources/slope/cl"
-
+seaLevel = "../resources/elevation/seaLevel.tif"
 protectedPath= "../resources/protected_areas/"
 countriesPath= "../resources/countries/"
 
 def main():
     print 'Hello'
+    #readFile(globCover,"landCover_0_1",360)
+    addToFile("../resources/landcover/landCover_0_1_coast_country", seaLevel, "landCover_0_1_final_sea")
     #computeGrid(1800,"test_total")
-    #addRResultsToGrid("test_total", countriesPath+"countries_0_5deg_total", "test_total_countries")
-    addRResultsToGrid("test_total_countries", protectedPath+"protected_0_5deg_total", "test_total_protected",true_false=True)
-    addSlopeClasses("test_total_protected","test_total_slopes")
+    #addRResultsToGrid("landCover_0_1_coast", countriesPath+"countries_0_1deg_total", "landCover_0_1_coast_country")
+    #addRResultsToGrid("test_total_countries", protectedPath+"protected_0_5deg_total", "test_total_protected",true_false=True)
+    #addSlopeClasses("test_total_protected","test_total_slopes")
     
 def computeGrid(arcres, finalOutput):
     readFile(file_ghi, "temp1", arcres)

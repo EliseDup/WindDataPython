@@ -10,11 +10,11 @@ from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
 
-name = '../WindPotentialScala/slope'
+name = '../WindPotentialScala/ghi_dni'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 10
+index = 3
 def main():
-    plotData(name,index, output="sf_CSP", xLabel="% of area suitable for CSP plants",show=True)
+    plotData(name,index, output="dni", xLabel="Yearly Average of Direct Normal Irradiation [W/m2]")
     print "Hello"
     
 def plotData(csvFile, index, output, xLabel="", show=False):
@@ -42,13 +42,13 @@ def plotData(csvFile, index, output, xLabel="", show=False):
                                                       , 250, endpoint=True), tri=True ) #, latlon=True)
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.arange(0,10,2))
+    cbar.set_ticks(np.arange(0,450,50))
     
     if show: 
         plt.show()
     else :
         # High resolution
-        #plt.savefig(output + '.pdf', dpi=250, bbox_inches='tight')
+        plt.savefig(output + '.pdf', dpi=250, bbox_inches='tight')
         plt.savefig(output + '.png', dpi=250, bbox_inches='tight')
         plt.close()
         
