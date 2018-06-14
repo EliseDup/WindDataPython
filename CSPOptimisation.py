@@ -59,7 +59,8 @@ def main():
 #     plt.show()
     
     data = genfromtxt('../WindPotentialScala/data_csp_optimisation', delimiter='\t', dtype=None)
-    output = open('res_through_0h', 'w')
+    if(_12h): output = open('res_through_12h', 'w')
+    else: output = open('res_through_0h', 'w')
     lats = data[:, 0]; lon = data[:, 1]; dni = data[:, 2];
    
     n = len(lats)
