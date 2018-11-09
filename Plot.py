@@ -10,14 +10,14 @@ from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
 
-name = '../WindPotentialScala/ghi_dni'
+name = '../WindPotentialScala/potential_9.0'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 3
+index = 2
 def main():
-    plotData(name,index, output="dni", xLabel="Yearly Average of Direct Normal Irradiation [W/m2]")
+    plotData(name,index, output="eroimin_9", xLabel="", show=False)
     print "Hello"
     
-def plotData(csvFile, index, output, xLabel="", show=False):
+def plotData(csvFile, index, output, xLabel="", show=True):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
      #### data preparation 
@@ -38,11 +38,12 @@ def plotData(csvFile, index, output, xLabel="", show=False):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(min(values)+0.01, max(values)+0.01
-                                                      , 250, endpoint=True), tri=True ) #, latlon=True)
-    cbar = map.colorbar(cs, location='bottom', pad="5%")
-    cbar.set_label(xLabel)
-    cbar.set_ticks(np.arange(0,450,50))
+    cs = map.contourf(lons, lats, values, np.linspace(1.0, 3.0, 3
+                                                      #min(values)+0.01, max(values)+0.01, 250
+                                                      , endpoint=False), tri=True ) #, latlon=True)
+    #cbar = map.colorbar(cs, location='bottom', pad="5%")
+    #cbar.set_label(xLabel)
+    #cbar.set_ticks(np.arange(0,100,5))
     
     if show: 
         plt.show()

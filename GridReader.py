@@ -9,8 +9,8 @@ from ncepgrib2 import dump
 VERBOSE = 1  # verbose error reporting
 
 def main():
-    gribToFile("../resources/era_interim_data/solar/")
-    #speedToFile("/Users/Elise/Desktop/wind2015", 'U component of wind', 'V component of wind', 1, 1,)
+    #gribToFile("/Users/Elise/Downloads/Wind_2018", 'U component of wind')
+    speedToFile("Wind_2018", 'U component of wind', 'V component of wind')
     
 def gribToFile(name, data_name):
     grib_data = pygrib.open(name + '.grib')
@@ -25,7 +25,7 @@ def gribToFile(name, data_name):
     res.close()
     return
 
-def speedToFile(name, u_name, v_name, i, j):
+def speedToFile(name, u_name, v_name): #, i, j):
     
     grib_data = pygrib.open(name + '.grib')
     uComponents = grib_data.select(name=u_name)  # To the EAST
@@ -36,13 +36,12 @@ def speedToFile(name, u_name, v_name, i, j):
     
     for m in range(0, min(len(vComponents), len(uComponents))):
         dataU, latsU, lonsU = uComponents[m].data(); dataV, latsV, lonsV = vComponents[m].data()
-        if i%100==0:print uComponents[m] , " ", vComponents[m], " ", latsV[i][j], " ", lonsV[i][j]
-        
-        # res.write(str(dataU[i][j]));res.write("\t");
-        # res.write(str(dataV[i][j]));res.write("\t");
-        res.write(str(latsV[i][j])); res.write("\t");res.write(str(lonsV[i][j])); res.write("\t");
-        res.write(str(uComponents[m].level)); res.write("\t"); res.write(str(uComponents[m].date)); res.write("\t"); res.write(str(uComponents[m].hour)) ; res.write("\t");
-        res.write(str(math.sqrt(dataU[i][j] * dataU[i][j] + dataV[i][j] * dataV[i][j])));res.write("\n");
+        #if m%100==0:print uComponents[m] , " ", vComponents[m], " ", latsV[i][j], " ", lonsV[i][j]
+        for i in range (0, len(latsV)):
+            for j in range (0, len(latsV[i])):
+                res.write(str(latsV[i][j])); res.write("\t");res.write(str(lonsV[i][j])); res.write("\t");
+                res.write(str(uComponents[m].level)); res.write("\t"); res.write(str(uComponents[m].date)); res.write("\t"); res.write(str(uComponents[m].hour)) ; res.write("\t");
+                res.write(str(math.sqrt(dataU[i][j] * dataU[i][j] + dataV[i][j] * dataV[i][j])));res.write("\n");
             
     res.close()
     return
