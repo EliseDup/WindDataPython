@@ -10,11 +10,12 @@ from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
 
-name = '../WindPotentialScala/potential_9.0'
+name = '../WindPotentialScala/optimal_sm' #potential_9.0'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 2
+index = 11
+
 def main():
-    plotData(name,index, output="eroimin_9", xLabel="", show=False)
+    plotData(name,index, output="test", xLabel="", show=True)
     print "Hello"
     
 def plotData(csvFile, index, output, xLabel="", show=True):
@@ -38,10 +39,10 @@ def plotData(csvFile, index, output, xLabel="", show=True):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(1.0, 3.0, 3
-                                                      #min(values)+0.01, max(values)+0.01, 250
+    cs = map.contourf(lons, lats, values, np.linspace(#1.0, 3.0, 3
+                                                      min(values)+0.01, max(values)+0.01, 250
                                                       , endpoint=False), tri=True ) #, latlon=True)
-    #cbar = map.colorbar(cs, location='bottom', pad="5%")
+    cbar = map.colorbar(cs, location='bottom', pad="5%")
     #cbar.set_label(xLabel)
     #cbar.set_ticks(np.arange(0,100,5))
     

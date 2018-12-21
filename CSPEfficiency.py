@@ -10,10 +10,11 @@ from scipy.interpolate.interpolate import interp1d
 import math
 def main():
     print "Hello"
-    sm = ("0_9","1","1_1","1_2","1_3","1_4","1_5","1_6","1_7","1_8")
+    #efficiency_dni("../resources/data_solar/sam_data/latitude_dni_eff_trough0h_sm2") 
+    #sm = ("2_7","3","3_3","3_6")
     #for s in sm:
     #    print s
-    #    efficiency_dni("../resources/data_solar/sam_data/latitude_dni_eff_trough0h_sm"+s)
+    #    efficiency_dni("../resources/data_solar/sam_data/latitude_dni_eff_tower12h_sm"+s)
      
 #===============================================================================
 #     fig = plt.figure()
@@ -45,12 +46,11 @@ def main():
     interpolation(ptpptes[:,0],ptpptes[:,1],1)
     interpolation(ptpptes[:,0],ptpptes[:,2],1)
     
-    plt.show()
-    #stpptes = genfromtxt("../resources/data_solar/sam_data/STPP-TES", delimiter='\t', dtype=None)
     
+    #stpptes = genfromtxt("../resources/data_solar/sam_data/STPP-TES", delimiter='\t', dtype=None)
     #interpolation(stpptes[:,0],stpptes[:,1],1)
     #interpolation(stpptes[:,0],stpptes[:,2],1)
-   
+    plt.show()
     print "End"
     
     
@@ -89,6 +89,7 @@ def ln_interpolation(x, y, plot=True):
     print 'R2 = ', rsquare
     
     if(plot):
+        plt.figure
         xp = np.linspace(min(x), max(x), 1000)
         plt.subplot(211) 
         #plt.plot(np.log(x), y, '.', np.log(xp), z(np.log(xp)), '-'); 
@@ -122,7 +123,7 @@ def sqrt_interpolation(x, y, plot=True):
         xp = np.linspace(min(x), max(x), 1000)
         # plt.subplot(211) 
         plt.plot(np.sqrt(x), y, '.', np.sqrt(xp), z(np.sqrt(xp)), '-'); 
-        plt.xlabel("ln(DNI [kWh/m2/year])"); plt.ylabel("Efficiency [%]");  # plt.draw();
+        plt.xlabel("Sqrt(DNI [kWh/m2/year])"); plt.ylabel("Efficiency [%]");  # plt.draw();
         # plt.subplot(212) 
         # plt.plot(np.log(x), y - z(np.log(x)),'.'); 
         
