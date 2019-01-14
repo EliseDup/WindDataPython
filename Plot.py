@@ -10,12 +10,12 @@ from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
 
-name = '../WindPotentialScala/optimal_sm' #potential_9.0'
+name = '../WindPotentialScala/potential_pvpoly_1.0'
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
-index = 11
+index = 2
 
 def main():
-    plotData(name,index, output="test", xLabel="", show=True)
+    plotData(name,index, output="eroimin_poly_8", xLabel="", show=True)
     print "Hello"
     
 def plotData(csvFile, index, output, xLabel="", show=True):
