@@ -9,13 +9,13 @@ import scipy.interpolate
 from matplotlib.mlab import griddata
 
 from numpy import genfromtxt
-
-name = '../WindPotentialScala/potential_pvpoly_1.0'
+eroi = 'pv_poly8.0'
+name = '../WindPotentialScala/potential_'+eroi
 # sf_wind, wind100m, cf_wind_100m, wi_eroi5, wi_eroi12
 index = 2
 
 def main():
-    plotData(name,index, output="eroimin_poly_8", xLabel="", show=True)
+    plotData(name,index, output="eroimin_"+eroi, xLabel="", show=False)
     print "Hello"
     
 def plotData(csvFile, index, output, xLabel="", show=True):
@@ -39,10 +39,10 @@ def plotData(csvFile, index, output, xLabel="", show=True):
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
-    cs = map.contourf(lons, lats, values, np.linspace(#1.0, 3.0, 3
-                                                      min(values)+0.01, max(values)+0.01, 250
+    cs = map.contourf(lons, lats, values, np.linspace(1.0, 3.0, 3
+                                                      #min(values)+0.01, max(values)+0.01, 250
                                                       , endpoint=False), tri=True ) #, latlon=True)
-    cbar = map.colorbar(cs, location='bottom', pad="5%")
+    #cbar = map.colorbar(cs, location='bottom', pad="5%")
     #cbar.set_label(xLabel)
     #cbar.set_ticks(np.arange(0,100,5))
     
