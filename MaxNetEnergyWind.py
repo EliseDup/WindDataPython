@@ -13,12 +13,15 @@ def main():
      lats = data[:, 0]; lon = data[:, 1]
      c = data[1:100, 2]; k = data[:, 3];
      totalArea = data[:, 4]; suitableArea = data[:, 5];
-     # In MWh
-     embodiedE = data[:, 6]; operationE = data[:, 7]; availFactor = data[:, 8];
+     # In MWh !!
+     embodiedE = data[:, 6]; 
+     # Fraction of the energy outputs
+     operationE = data[:, 7]; 
+     availFactor = data[:, 8];
      n = len(c)
      
      print "Size problem ", n
-     output = open('test2', 'w')
+     output = open('test', 'w')
      res = maximizeTotalNetEnergyWind(c, k, suitableArea, embodiedE, operationE, availFactor)
      for i in range(0, n):
          output.write(str(lats[i]) + "\t" + str(lon[i]) + "\t" + str(res[i]) + "\t"  + 
