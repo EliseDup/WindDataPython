@@ -26,18 +26,18 @@ countriesPath= "../resources/countries/"
 def main():
     print 'Hello'
     #readFile(globCover,"landCover_0_1",360)
-    addToFile("../resources/landcover/landCover_0_1_coast_country", seaLevel, "landCover_0_1_final_sea")
-    #computeGrid(1800,"test_total")
+    #addToFile("../resources/landcover/landCover_0_1_coast_country", seaLevel, "landCover_0_1_final_sea")
+    computeGrid(0.75,"solar_0_75_tp")
     #addRResultsToGrid("landCover_0_1_coast", countriesPath+"countries_0_1deg_total", "landCover_0_1_coast_country")
     #addRResultsToGrid("test_total_countries", protectedPath+"protected_0_5deg_total", "test_total_protected",true_false=True)
-    #addSlopeClasses("test_total_protected","test_total_slopes")
+    addSlopeClasses("solar_0_75_tp","solar_0_75")
     
 def computeGrid(arcres, finalOutput):
     readFile(file_ghi, "temp1", arcres)
-    addToFile("temp1", file_dni,"temp")
-    addToFile("temp", globCover,"temp1")
-    addToFile("temp1", coast_distance,"temp")
-    addToFile("temp",elevation,finalOutput)
+    addToFile("temp1", file_dni,finalOutput)
+    #addToFile("temp", globCover,"temp1")
+    #addToFile("temp1", coast_distance,"temp")
+    #addToFile("temp",elevation,finalOutput)
    
 def addSlopeClasses(gridFile, output): 
     addToFile(gridFile, slope_path+"1_0_0833.tif", "temp1")
@@ -48,23 +48,24 @@ def addSlopeClasses(gridFile, output):
     addToFile("temp7", slope_path+"8_0_0833.tif", output)
     
 # Read a tif file and print a file with 3 columns : latitude, longitude, and the corresponding value. The grid is computed with the resolution given in arcsecond !
-def readFile(dataset, output, arcres = 1800, factor = 1.0, all = True):
+def readFile(dataset, output, deg, factor = 1.0, all = True):
     res = open(output, 'w')
     ds = gdal.Open(dataset, GA_ReadOnly)
     lc.printInfo(ds)
     rows = ds.RasterYSize; cols = ds.RasterXSize;
     
-    for lat in range(-90, 90):
-        for i in range(0, 3600 / arcres):
-            latIt = lat + i * arcres / 3600.0;
-            for lon in range(-180, 180):
-                for j in range(0, 3600 / arcres):
-                    lonIt = lon + j * arcres / 3600.0;
-                    pixel = lc.latLonToPixel(ds, [latIt, lonIt], False)
-                    if(pixel[0] >= 0 and pixel[1] >= 0 and pixel[0] < cols and pixel[1] < rows):
-                        value = lc.value(ds, pixel)
-                        if(not np.isnan(value) and float(value)!=-9999): res.write(str(lonIt) + "\t" + str(latIt) + "\t" +str(float(factor*value)) + "\n")
-                        elif all: res.write(str(lonIt) + "\t" + str(latIt) + "\t"+ "0.0" + "\n")
+    #for lat in range(-90, 90):
+    for i in range(0, int(180/deg)):
+        latIt = -90 + i * deg;
+        #for lon in range(-180, 180):
+        for j in range(0, int(360/deg)):
+            lonIt = -180 + j * deg;
+            pixel = lc.latLonToPixel(ds, [latIt, lonIt], False)
+            if(pixel[0] >= 0 and pixel[1] >= 0 and pixel[0] < cols and pixel[1] < rows):
+                value = lc.value(ds, pixel)
+                if(not np.isnan(value) and float(value)!=-9999): res.write(str(lonIt) + "\t" + str(latIt) + "\t" +str(float(factor*value)) + "\n")
+                elif all: res.write(str(lonIt) + "\t" + str(latIt) + "\t"+ "0.0" + "\n")
+            else: res.write(str(lonIt) + "\t" + str(latIt) + "\t"+ "0.0" + "\n")
     res.close()
 
 # Grid is a txt file with lat & lon in the two first column and other information after
