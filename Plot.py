@@ -11,14 +11,15 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 
 def main():
-     plotData("../WindPotentialScala/EROI", 2,'EROI_PV',xLabel="EROI Mono-Si PV")
-     plotData("../WindPotentialScala/EROI", 3,'EROI_CSP',xLabel="EROI CSPPT-12h TES")
+     plotData("results_simple_model", 2, "out")
+    #plotData("../WindPotentialScala/EROI", 2,'EROI_PV',xLabel="EROI Mono-Si PV")
+    # plotData("../WindPotentialScala/EROI", 3,'EROI_CSP',xLabel="EROI CSPPT-12h TES")
     # plotData('solar',3,'',xLabel="Solar PV",subplot_size=2,subplot_index=1)
     # plotData('solar',4,'solar_csp_pv',xLabel="Solar CSP",subplot_size=2,subplot_index=2,save=True)
     
      plt.show()
 
-def plotData(csvFile, index, output, xLabel="", save=True, subplot=False, subplot_size = 1, subplot_index = 1):
+def plotData(csvFile, index, output, xLabel="", save=False, subplot=False, subplot_size = 1, subplot_index = 1):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
      #### data preparation 
