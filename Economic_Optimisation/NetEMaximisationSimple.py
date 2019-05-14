@@ -5,14 +5,14 @@ import math
 from scipy.optimize import minimize, root
 from datetime import datetime
 from scipy.special import gammainc
-
+import Calculation
 import time
 
 def main():
-    inputs = 'simple_sf' # '../WindPotentialScala/simple_sf'
-    #inputs_total = '../WindPotentialScala/simple_total'
-    #results_maximiseNetEnergyCell(inputs, 'test', False, 500)
-    results_maximiseNetEnergyGrid(inputs, 'results_grid', False, 1000)
+    inputs = 'inputs/simple_sf'
+    inputs_total = 'inputs/simple_total'
+    results_maximiseNetEnergyCell(inputs, 'outputs/test_simple_cell', False, 100)
+    results_maximiseNetEnergyGrid(inputs, 'outputs/test_simple_grid', False, 100)
     
 def loadData(opti_inputs):
      data = genfromtxt(opti_inputs, delimiter='\t', dtype=None)
@@ -72,17 +72,6 @@ def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, size):
     output.close()
     print "Optimization for the whole grid ends in ", (time.time() - t0), " seconds"
 
-# Generic function for the inequality constraint x[1] + x[2] <= 1
-def non_complementary_constraint(i, j):
-    def g(x):
-        return np.array([-x[i] - x[j] + 1])
-    return g
-def binary_bounds(n):
-    bnds = []
-    for i in range(0, n):
-        bnds.append((0.0, 1.0))
-    return bnds
-
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
 # x is the vector corresponding to the % of each cells covered by a given technology
 def netEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
@@ -96,8 +85,8 @@ def maximiseNetEnergyCell(area, eff, ressources, installed_capaciy_density, oper
     def obj(x): 
         return -netEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y)
     # linear_constraint = LinearConstraint([[0, 1, 1]], [0], [1])
-    cons = ({'type': 'ineq', 'fun' : non_complementary_constraint(1, 2)})
-    res = minimize(obj, x0=np.ones(3), bounds=binary_bounds(3), constraints=[cons], method='trust-constr')
+    cons = ({'type': 'ineq', 'fun' : Calculation.non_complementary_constraint(1, 2)})
+    res = minimize(obj, x0=np.ones(3), bounds=Calculation.binary_bounds(3), constraints=[cons], method='trust-constr')
     return (-obj(res.x), res)
 
 # Maximise the net energy produced for the whole grid: 3 variables / grid cell !
@@ -110,8 +99,8 @@ def maximiseNetEnergyGrid(area, eff, ressources, installed_capaciy_density, oper
     
     cons = []
     for i in range(0, (n / 3)):
-        cons.append({'type': 'ineq', 'fun' : non_complementary_constraint(i * 3 + 1, i * 3 + 2)})
-    res = minimize(obj, x0=np.ones(n), bounds=binary_bounds(n), constraints=cons, method='trust-constr')
+        cons.append({'type': 'ineq', 'fun' : Calculation.non_complementary_constraint(i * 3 + 1, i * 3 + 2)})
+    res = minimize(obj, x0=np.ones(n), bounds=Calculation.binary_bounds(n), constraints=cons, method='trust-constr')
     return  (-obj(res.x), res)
 
 if __name__ == "__main__":
