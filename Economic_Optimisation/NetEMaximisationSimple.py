@@ -2,18 +2,17 @@ import sys
 import numpy as np
 from numpy import genfromtxt, ndarray
 import math
-import matplotlib.pyplot as plt
 from scipy.optimize import minimize, root
 from datetime import datetime
 from scipy.special import gammainc
-from matplotlib.pyplot import plot
-# from scipy.optimize import LinearConstraint
+
 import time
 
 def main():
-    inputs = '../WindPotentialScala/simple'
-    results_maximiseNetEnergyCell(inputs, 'results_cell', True, 100)
-    results_maximiseNetEnergyGrid(inputs, 'results_grid', True, 100)
+    inputs = 'simple_sf' # '../WindPotentialScala/simple_sf'
+    #inputs_total = '../WindPotentialScala/simple_total'
+    #results_maximiseNetEnergyCell(inputs, 'test', False, 500)
+    results_maximiseNetEnergyGrid(inputs, 'results_grid', False, 1000)
     
 def loadData(opti_inputs):
      data = genfromtxt(opti_inputs, delimiter='\t', dtype=None)
@@ -37,11 +36,16 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size):
     print "# Cells:", n
     output = open(output_file, 'w')
     for i in range(0, n):
-       output.write(str(lats[i]) + "\t" + str(lon[i]) + "\t")
-       res = maximiseNetEnergyCell(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
-       output.write(str(res[0]/1000) + "\t")
-       output.write(str(res[1].x[0]) + "\t" + str(res[1].x[1]) + "\t" + str(res[1].x[2]))
-       output.write("\n")
+        if(i%10000==0):
+            print "Progress ", round(float(i)/float(n)*100), "%"
+        output.write(str(lats[i]) + "\t" + str(lon[i]) + "\t")
+        if sum(area[i]) > 0:
+           res = maximiseNetEnergyCell(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
+           output.write(str(res[0]/1000) + "\t")
+           output.write(str(res[1].x[0]) + "\t" + str(res[1].x[1]) + "\t" + str(res[1].x[2]))
+        else:
+           output.write("0.0" + "\t" +"0.0" + "\t" +"0.0" + "\t" + "0.0")
+        output.write("\n")
     output.close()
     print "Optimization cell per cell completed in ", (time.time() - t0), " seconds"
     
