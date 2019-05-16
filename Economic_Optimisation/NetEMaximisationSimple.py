@@ -1,18 +1,22 @@
 import sys
 import numpy as np
-from numpy import genfromtxt, ndarray
+from numpy import genfromtxt, ndarray, array
 import math
 from scipy.optimize import minimize, root
 from datetime import datetime
 from scipy.special import gammainc
 import Calculation
 import time
+import pulp
 
 def main():
     inputs = 'inputs/simple_sf'
     inputs_total = 'inputs/simple_total'
-    results_maximiseNetEnergyCell(inputs, 'outputs/test_simple_cell', False, 100)
-    results_maximiseNetEnergyGrid(inputs, 'outputs/test_simple_grid', False, 100)
+   
+    results_maximiseNetEnergyCell(inputs, 'outputs/test_simple_pulp', True, 10, True)
+    results_maximiseNetEnergyCell(inputs, 'outputs/test_simple_scipy', True, 10, False)
+    
+    #results_maximiseNetEnergyGrid(inputs, 'outputs/test_simple_grid', False, 100)
     
 def loadData(opti_inputs):
      data = genfromtxt(opti_inputs, delimiter='\t', dtype=None)
@@ -26,7 +30,7 @@ def loadData(opti_inputs):
      operationE = data[:, 17:20]
      return (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE)
         
-def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size):
+def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size, pulp):
     t0 = time.time()
     (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE) = loadData(opti_inputs)
     if total: 
@@ -35,14 +39,17 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size):
         n = size
     print "# Cells:", n
     output = open(output_file, 'w')
-    for i in range(0, n):
+    for i in range(9620, n):
         if(i%10000==0):
             print "Progress ", round(float(i)/float(n)*100), "%"
         output.write(str(lats[i]) + "\t" + str(lon[i]) + "\t")
-        if sum(area[i]) > 0:
-           res = maximiseNetEnergyCell(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
+        if sum(area[i]) > 1E-3:
+           if pulp:
+               res = maximiseNetEnergyCell_Pulp(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
+           else:
+               res = maximiseNetEnergyCell(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
            output.write(str(res[0]/1000) + "\t")
-           output.write(str(res[1].x[0]) + "\t" + str(res[1].x[1]) + "\t" + str(res[1].x[2]))
+           output.write(str(res[1][0]) + "\t" + str(res[1][1]) + "\t" + str(res[1][2]))
         else:
            output.write("0.0" + "\t" +"0.0" + "\t" +"0.0" + "\t" + "0.0")
         output.write("\n")
@@ -75,10 +82,20 @@ def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, size):
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
 # x is the vector corresponding to the % of each cells covered by a given technology
 def netEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
-    production = x * area * eff * ressources * (365 * 24) * (np.ones(len(x)) - operationE)
+    if len(area)==1:
+        one = 1
+    else:
+        one = np.ones(len(x))
+    production = x * area * eff * ressources * (365 * 24) * (one - operationE)
     ee = x * area * installed_capaciy_density * embodiedE1y 
     return sum(production - ee)
-       
+ # Only take the indexes where there is a potential (area > 0) for the optimization problem
+def getIndexes(area):
+    indexes = []
+    for i in range(0,len(area)):
+        if area[i] > 0:
+            indexes.append(i) 
+    return np.array(indexes)  
 # Maximise the net energy produced on one cell: only 3 variables
 def maximiseNetEnergyCell(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
     # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
@@ -87,7 +104,32 @@ def maximiseNetEnergyCell(area, eff, ressources, installed_capaciy_density, oper
     # linear_constraint = LinearConstraint([[0, 1, 1]], [0], [1])
     cons = ({'type': 'ineq', 'fun' : Calculation.non_complementary_constraint(1, 2)})
     res = minimize(obj, x0=np.ones(3), bounds=Calculation.binary_bounds(3), constraints=[cons], method='trust-constr')
-    return (-obj(res.x), res)
+    return (-obj(res.x), res.x)
+
+def maximiseNetEnergyCell_Pulp(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
+    my_lp_problem = pulp.LpProblem("NE Maximisation Cell", pulp.LpMaximize)
+    indexes = getIndexes(area)
+    x = []
+    for i in indexes:
+        x.append(pulp.LpVariable('x'+str(i), lowBound=0, upBound=1, cat='Continuous'))
+    # Objective function
+    my_lp_problem += netEnergy(x, area[indexes], eff[indexes], ressources[indexes], installed_capaciy_density[indexes], operationE[indexes], embodiedE1y[indexes]), "Z"
+    # Constraints
+    if (indexes == 1).sum() + (indexes == 2).sum() == 2:
+        if (indexes == 0).sum()==1:
+            my_lp_problem += x[1] + x[2] <= 1
+        else:
+            my_lp_problem += x[0] + x[1] <= 1
+    
+    my_lp_problem.solve()
+    
+    x_res = np.zeros(3); j = 0;
+    for i in indexes:
+        x_res[i] = (my_lp_problem.variables()[j].varValue); j = j + 1;
+    #for variable in my_lp_problem.variables():
+    #    x_res.append(variable.varValue)
+    
+    return (pulp.value(my_lp_problem.objective), x_res)
 
 # Maximise the net energy produced for the whole grid: 3 variables / grid cell !
 def maximiseNetEnergyGrid(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
