@@ -27,6 +27,19 @@ def loadData(opti_inputs):
      operationE_wind = data[:, 10]
      avail_wind = data[:, 11]
      return (lats, lon, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind)
+
+def loadDataSimpleModel(opti_inputs):
+     data = genfromtxt(opti_inputs, delimiter='\t', dtype=None)
+     lats = data[:, 0]; lon = data[:, 1]
+     # Potential suitable area for each tecnology
+     area = data[:, 2:5]
+     eff = data[:, 5:8]
+     ressources = data[:, 8:11]
+     installed_capaciy_density = data[:, 11:14]
+     embodiedE1y = data[:, 14:17]
+     operationE = data[:, 17:20]
+     return (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE)
+        
    
 # Fixed inputs !
 efficiency_PV = 0.18622918619208484
@@ -40,6 +53,17 @@ defaultCSP_area = 13.533834586466165
 
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
 # x is the vector corresponding to the % of each cells covered by a given technology
+def netEnergySimpleModel(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
+    if len(area) == 1:
+        one = 1
+    else:
+        one = np.ones(len(x))
+    production = x * area * eff * ressources * (365 * 24) * (one - operationE)
+    ee = x * area * installed_capaciy_density * embodiedE1y 
+    return sum(production - ee)
+
+# Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
+# x is the vector corresponding to the % of each cells covered by a given technology
 def netEnergy(x, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind):
     return netEnergyWind(x[0], area[0], x[3], x[4], c, k, embodiedE1y_wind, operationE_wind, avail_wind) + netEnergyPV(x[1], area[1], ghi) + netEnergyCSP(x[2], area[2], dni, x[5])
 
@@ -49,7 +73,7 @@ def netEnergyPV(x, area, ghi):
     return x * area * (efficiency_PV * ghi * (365 * 24) * (1 - operationE_PV) - installed_capacity_density_PV * embodiedE1y_PV)
 def netEnergyCSP(x, area, dni, sm):
     eeCSP = embodiedE1y_CSP_fixed * ratedPowerCSP(sm, x * area) + embodiedE1y_CSP_area * x * area / defaultCSP_area
-    return x * area * (efficiencyCSP(dni,sm) * dni * (365 * 24) * (1 - operationE_CSP)) - eeCSP
+    return x * area * (efficiencyCSP(dni, sm) * dni * (365 * 24) * (1 - operationE_CSP)) - eeCSP
    
 # WIND
 def capacityFactor(c, k, vr):
@@ -77,3 +101,26 @@ def efficiencyCSP(dni, sm):
     else: return lifeTimeEfficiency((a(sm) * math.log(dni * 8.76) + b(sm)) / 100.0, 1.0, 0.2 / 100, 30)
 def ratedPowerCSP(sm, area):
     return area * 950 * 0.22 / sm
+
+# Results grid with 3 decision variable per cell (x_wind, x_pv, x_csp)
+def writeResultsGrid(output_file, n, lats, lon, res):
+    output = open(output_file, 'w')
+    for i in range(0, n):
+       output.write(str(lats[i]) + "\t" + str(lon[i]) + "\t")
+       resIndex = i * 3; x = np.zeros(3);
+       for j in range(0, 3):
+           x[j] = res[1][resIndex + j]
+       # netE = netEnergy(x, area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
+       # output.write(str(netE / 1000) + "\t")
+       output.write(str(x[0]) + "\t" + str(x[1]) + "\t" + str(x[2]))
+       output.write("\n")
+    output.close()
+    return
+
+def writeResultsCell(output, lat, lon, res):
+    output.write(str(lat) + "\t" + str(lon) + "\t")
+    output.write(str(res[0] / 1000))
+    for i in range(0, len(res[1])):
+        output.write("\t" + str(res[1][i]))
+    output.write("\n")
+    return

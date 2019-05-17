@@ -9,6 +9,7 @@ from matplotlib.pyplot import plot
 # from scipy.optimize import LinearConstraint
 import time
 import Calculation
+import pulp
 
 def main():
     inputs = 'inputs/params'
@@ -26,16 +27,7 @@ def results_maximiseConsumptionGrid(opti_inputs, output_file, total, size):
     output = open(output_file, 'w')
     res = maximiseConsumptionGrid(area[0:n, :], c[0:n], k[0:n], ghi[0:n], dni[0:n], embodiedE1y_wind[0:n], operationE_wind[0:n], avail_wind[0:n])
     print "Results Grid ", res[0] / 1E6, " TWh "
-    output = open(output_file, 'w')
-    for i in range(0, n):
-       output.write(str(lats[i]) + "\t" + str(lon[i]) + "\t")
-       resIndex = i * 3; x = np.zeros(3);
-       for j in range(0, 3):
-           x[j] = res[1].x[resIndex + j]
-       output.write(str(x[0]) + "\t" + str(x[1]) + "\t" + str(x[2]))
-       output.write("\n")
-    output.close()
-    
+    Calculation.writeResultsGrid(output_file, lats, lon, res)
     print "Consumption Maximisation grid completed in ", (time.time() - t0), " seconds"
  
 # Maximise the consumption on the whole grid
@@ -48,7 +40,7 @@ def maximiseConsumptionGrid(area, c, k, ghi, dni, embodiedE1y_wind, operationE_w
     for i in range(0, (n / 3)):
         cons.append({'type': 'ineq', 'fun' : Calculation.non_complementary_constraint(i * 3 + 1, i * 3 + 2)})
     res = minimize(obj, x0=np.ones(n), bounds=Calculation.binary_bounds(n), constraints=cons, method='trust-constr')
-    return  (-obj(res.x), res)
+    return  (-obj(res.x), res.x)
 
 if __name__ == "__main__":
     sys.exit(main())
