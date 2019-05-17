@@ -13,10 +13,10 @@ import pulp
 def main():
     inputs = 'inputs/simple_sf'
     inputs_total = 'inputs/simple_total'
-    results_maximiseNetEnergyCell(inputs, 'outputs/test1', False, 1000, True)
-    results_maximiseNetEnergyCell(inputs, 'outputs/test2', False, 1000, False)
-    results_maximiseNetEnergyGrid(inputs, 'outputs/test3', False, 1000, True)
-    results_maximiseNetEnergyGrid(inputs, 'outputs/test4', False, 1000, False)
+    results_maximiseNetEnergyCell(inputs, 'outputs/test1', False, 100, True)
+    results_maximiseNetEnergyCell(inputs, 'outputs/test2', False, 100, False)
+    results_maximiseNetEnergyGrid(inputs, 'outputs/test3', False, 100, True)
+    results_maximiseNetEnergyGrid(inputs, 'outputs/test4', False, 100, False)
        
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size, pulp):
     t0 = time.time()

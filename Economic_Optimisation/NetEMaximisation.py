@@ -14,7 +14,7 @@ import time
 
 def main():
     inputs = 'inputs/params'
-    results_maximiseNetEnergyCell(inputs, 'outputs/test_netE', False, 1000)
+    results_maximiseNetEnergyCell(inputs, 'outputs/test_netE', False, 100)
            
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size):
     t0 = time.time()
@@ -33,7 +33,7 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size):
         total += res[0]
         Calculation.writeResultsCell(output, lats[i], lon[i], res)
     output.close()
-    print "Results Grid ", res[0] / 1E6, " TWh "
+    print "Results Grid ", total / 1E6, " TWh "
     print "Optimization cell per cell completed in ", (time.time() - t0), " seconds"
 
 # Maximise the net energy produced on one cell: 3 variables x_ij + vr_i + n_i + SM_i
