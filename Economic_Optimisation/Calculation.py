@@ -6,7 +6,7 @@ from datetime import datetime
 from scipy.special import gammainc
 from matplotlib.pyplot import plot
 
-inputs_simple = 'inputs/simple_sf'
+inputs_simple = 'inputs/inputs_sf'
 inputs_simple_total = 'inputs/simple_total'
 inputs_params = 'inputs/params'
 
@@ -42,7 +42,8 @@ def loadDataSimpleModel(opti_inputs):
      installed_capaciy_density = data[:, 11:14]
      embodiedE1y = data[:, 14:17]
      operationE = data[:, 17:20]
-     return (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE)
+     keMax = data[:, 20]
+     return (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax)
           
 # Fixed inputs !
 efficiency_PV = 0.18622918619208484
@@ -57,18 +58,22 @@ defaultCSP_area = 13.533834586466165
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
 # x is the vector corresponding to the % of each cells covered by a given technology
 def netEnergySimpleModel(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
-    return sum(production(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y) - embodiedEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y))
+    return sum(production(x, area, eff, ressources, operationE) - embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
 
-def production(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
+def production(x, area, eff, ressources, operationE):
     if len(area) == 1:
         one = 1
     else:
         one = np.ones(len(x))
     return x * area * eff * ressources * (365 * 24) * (one - operationE)
-def embodiedEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
+def embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y): 
     return x * area * installed_capaciy_density * embodiedE1y 
+# C = Y - Ie - If
+# C = E/qF - deltaE KE - deltaF KF
+# C = E/qF - deltaE tilde{K}E / qF - deltaF E vF / qF
+# ==> C = E ( (1-deltaF vF)/qF ) - deltaE/qF tilde{K}E
 def consumptionSimple(qF, vF, deltaE, deltaF, x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
-    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y) - deltaE/qF * embodiedEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y))
+    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, operationE) - deltaE/qF * embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
 
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
 # x is the vector corresponding to the % of each cells covered by a given technology
@@ -113,16 +118,18 @@ def ratedPowerCSP(sm, area):
 # Only take the indexes where there is a potential (area > 0) for the optimization problem
 # Then regirster the indexes where we should add a complementary constraint
 def getIndexesSimpleModel(area):
-    indexes = []; indexes_cons = []; k = 0;
+    indexes = []; indexes_cons = []; k = 0; indexes_wind = []
     for i in range(0, len(area) / 3):
         for j in range(0, 3):
             index = i * 3 + j
             if area[i * 3 + j] > 0:
                 indexes.append(index)
+                if j == 0:
+                    indexes_wind.append(k)
                 if j == 2 and indexes[len(indexes)-2] == index - 1:
                     indexes_cons.append([k - 1, k])
                 k += 1
-    return (np.array(indexes), np.array(indexes_cons))
+    return (np.array(indexes), np.array(indexes_cons),  np.array(indexes_wind))
 
 def getIndexes(area):
     ind_x = []; ind_wind = []; ind_csp = []; ind_cons = []; k = 0;

@@ -11,14 +11,14 @@ import pulp
 
 # Pulp is faster than scipy.optimize.minimize !
 def main():
-    results_maximiseNetEnergyCell(Calculation.inputs_simple, 'outputs/netE_Simple_Cell', False, 1000, True)
+    #results_maximiseNetEnergyCell(Calculation.inputs_simple, 'outputs/netE_Simple_Cell', False, 1000, True)
     #results_maximiseNetEnergyCell(inputs, 'outputs/test2', False, 100, False)
-    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'outputs/netE_Simple_Grid', False, 1000, True)
+    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'outputs/netE_Simple_Grid', False, 10000, True)
     #results_maximiseNetEnergyGrid(inputs, 'outputs/test4', False, 100, False)
        
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size, pulp):
     t0 = time.time()
-    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE) = Calculation.loadDataSimpleModel(opti_inputs)
+    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
         n = len(lats) 
     else:
@@ -31,7 +31,7 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size, pulp):
         if(i % (n/10) == 0):
             print "Progress ", round(float(i)/float(n)*100), "%"
         if pulp:
-            res = maximiseNetEnergy_Pulp(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
+            res = maximiseNetEnergy_Pulp(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i], keMax[i])
         else:
             res = maximiseNetEnergyCell(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
         total += res[0]
@@ -42,21 +42,21 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size, pulp):
     
 def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, size, pulp):
     t0 = time.time()
-    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE) = Calculation.loadDataSimpleModel(opti_inputs)
+    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
         n = len(lats)
     else: 
         n = size
     print "# Cells:", n
     if pulp:
-        res = maximiseNetEnergy_Pulp(area[0:n, :], eff[0:n, :], ressources[0:n, :], installed_capaciy_density[0:n, :], operationE[0:n, :], embodiedE1y[0:n, :])
+        res = maximiseNetEnergy_Pulp(area[0:n, :], eff[0:n, :], ressources[0:n, :], installed_capaciy_density[0:n, :], operationE[0:n, :], embodiedE1y[0:n, :], keMax[0:n])
     else:
         res = maximiseNetEnergyGrid(area[0:n, :], eff[0:n, :], ressources[0:n, :], installed_capaciy_density[0:n, :], operationE[0:n, :], embodiedE1y[0:n, :])
     print "Results Grid ", res[0] / 1E6, " TWh "
     Calculation.writeResultsGrid(output_file, n, lats, lon, res)
     print "Optimization for the whole grid ends in ", (time.time() - t0), " seconds"
 
-def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
+def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y, keMax):
     area = area.flatten();eff = eff.flatten();ressources = ressources.flatten()
     installed_capaciy_density = installed_capaciy_density.flatten();operationE = operationE.flatten();embodiedE1y = embodiedE1y.flatten()
     n = len(area)
@@ -71,15 +71,19 @@ def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, ope
             x.append(pulp.LpVariable('x' + str(i), lowBound=0, upBound=1, cat='Continuous'))
         # Objective function
         my_lp_problem += Calculation.netEnergySimpleModel(x, area[indexes[0]], eff[indexes[0]], ressources[indexes[0]], installed_capaciy_density[indexes[0]], operationE[indexes[0]], embodiedE1y[indexes[0]]), "Z"
-        # Constraints
+        # Constraints: non complementary constraints for PV and CSP
         for i in indexes[1]:
             my_lp_problem += x[i[0]] + x[i[1]] <= 1
+        # Constraints: max KE generation for wind 
+        for i in indexes[2]:
+            my_lp_problem += x[i]*area[i]*ressources[i]*eff[i] <= keMax[i]
+            
         my_lp_problem.solve()
         
         x_res = np.zeros(n); j = 0;
         for i in indexes[0]:
             x_res[i] = (my_lp_problem.variables()[j].varValue); j = j + 1;
-   
+            
         return (pulp.value(my_lp_problem.objective), x_res)
 
 # Maximise the net energy produced on one cell: only 3 variables
