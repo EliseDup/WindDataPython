@@ -11,21 +11,20 @@ import pulp
 
 # Pulp is faster than scipy.optimize.minimize !
 def main():
-    inputs = 'inputs/simple_sf'
-    inputs_total = 'inputs/simple_total'
-    results_maximiseNetEnergyCell(inputs, 'outputs/test1', False, 100, True)
-    results_maximiseNetEnergyCell(inputs, 'outputs/test2', False, 100, False)
-    results_maximiseNetEnergyGrid(inputs, 'outputs/test3', False, 100, True)
-    results_maximiseNetEnergyGrid(inputs, 'outputs/test4', False, 100, False)
+    results_maximiseNetEnergyCell(Calculation.inputs_simple, 'outputs/netE_Simple_Cell', False, 1000, True)
+    #results_maximiseNetEnergyCell(inputs, 'outputs/test2', False, 100, False)
+    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'outputs/netE_Simple_Grid', False, 1000, True)
+    #results_maximiseNetEnergyGrid(inputs, 'outputs/test4', False, 100, False)
        
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size, pulp):
     t0 = time.time()
     (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE) = Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
         n = len(lats) 
-    else: 
+    else:
         n = size
     print "# Cells:", n
+    
     output = open(output_file, 'w')
     total = 0
     for i in range(0, n):
@@ -57,19 +56,6 @@ def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, size, pulp):
     Calculation.writeResultsGrid(output_file, n, lats, lon, res)
     print "Optimization for the whole grid ends in ", (time.time() - t0), " seconds"
 
-# Only take the indexes where there is a potential (area > 0) for the optimization problem
-# Then regirster the indexes where we should add a complementary constraint
-def getIndexes(area):
-    indexes = []; indexes_cons = [];
-    for i in range(0, len(area) / 3):
-        for j in range(0, 3):
-            index = i * 3 + j
-            if area[i * 3 + j] > 0:
-                indexes.append(index)
-                if j == 2 and indexes[len(indexes)-2] == index - 1:
-                    indexes_cons.append([index - 1, index])
-    return (np.array(indexes), np.array(indexes_cons))
-
 def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
     area = area.flatten();eff = eff.flatten();ressources = ressources.flatten()
     installed_capaciy_density = installed_capaciy_density.flatten();operationE = operationE.flatten();embodiedE1y = embodiedE1y.flatten()
@@ -79,7 +65,7 @@ def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, ope
         return(0.0, np.zeros(n))
     else:
         my_lp_problem = pulp.LpProblem("NE Maximisation Cell", pulp.LpMaximize)
-        indexes = getIndexes(area)
+        indexes = Calculation.getIndexesSimpleModel(area)
         x = []
         for i in indexes[0]:
             x.append(pulp.LpVariable('x' + str(i), lowBound=0, upBound=1, cat='Continuous'))
@@ -102,7 +88,7 @@ def maximiseNetEnergyCell(area, eff, ressources, installed_capaciy_density, oper
         return (0, np.zeros(3))
     else:
         # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
-        indexes = getIndexes(area)
+        indexes = Calculation.getIndexesSimpleModel(area)
         n = len(indexes[0])
         def obj(x):
             return -Calculation.netEnergySimpleModel(x, area[indexes[0]], eff[indexes[0]], ressources[indexes[0]], installed_capaciy_density[indexes[0]], operationE[indexes[0]], embodiedE1y[indexes[0]])

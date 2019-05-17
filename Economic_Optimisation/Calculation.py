@@ -6,6 +6,10 @@ from datetime import datetime
 from scipy.special import gammainc
 from matplotlib.pyplot import plot
 
+inputs_simple = 'inputs/simple_sf'
+inputs_simple_total = 'inputs/simple_total'
+inputs_params = 'inputs/params'
+
 # Generic function for the inequality constraint x[1] + x[2] <= 1
 def non_complementary_constraint(i, j):
     def g(x):
@@ -39,8 +43,7 @@ def loadDataSimpleModel(opti_inputs):
      embodiedE1y = data[:, 14:17]
      operationE = data[:, 17:20]
      return (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE)
-        
-   
+          
 # Fixed inputs !
 efficiency_PV = 0.18622918619208484
 installed_capacity_density_PV = 240
@@ -54,13 +57,18 @@ defaultCSP_area = 13.533834586466165
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
 # x is the vector corresponding to the % of each cells covered by a given technology
 def netEnergySimpleModel(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
+    return sum(production(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y) - embodiedEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y))
+
+def production(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
     if len(area) == 1:
         one = 1
     else:
         one = np.ones(len(x))
-    production = x * area * eff * ressources * (365 * 24) * (one - operationE)
-    ee = x * area * installed_capaciy_density * embodiedE1y 
-    return sum(production - ee)
+    return x * area * eff * ressources * (365 * 24) * (one - operationE)
+def embodiedEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
+    return x * area * installed_capaciy_density * embodiedE1y 
+def consumptionSimple(qF, vF, deltaE, deltaF, x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
+    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y) - deltaE/qF * embodiedEnergy(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y))
 
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
 # x is the vector corresponding to the % of each cells covered by a given technology
@@ -101,6 +109,34 @@ def efficiencyCSP(dni, sm):
     else: return lifeTimeEfficiency((a(sm) * math.log(dni * 8.76) + b(sm)) / 100.0, 1.0, 0.2 / 100, 30)
 def ratedPowerCSP(sm, area):
     return area * 950 * 0.22 / sm
+
+# Only take the indexes where there is a potential (area > 0) for the optimization problem
+# Then regirster the indexes where we should add a complementary constraint
+def getIndexesSimpleModel(area):
+    indexes = []; indexes_cons = []; k = 0;
+    for i in range(0, len(area) / 3):
+        for j in range(0, 3):
+            index = i * 3 + j
+            if area[i * 3 + j] > 0:
+                indexes.append(index)
+                if j == 2 and indexes[len(indexes)-2] == index - 1:
+                    indexes_cons.append([k - 1, k])
+                k += 1
+    return (np.array(indexes), np.array(indexes_cons))
+
+def getIndexes(area):
+    ind_x = []; ind_wind = []; ind_csp = []; ind_cons = []; k = 0;
+    for i in range(0, len(area) / 3):
+        for j in range(0, 3):
+            index = i * 3 + j
+            if area[i * 3 + j] > 0:
+                ind_x.append(index)
+                if j == 0: ind_wind.append(index)
+                if j == 2: ind_csp.append(index)
+                if j == 2 and ind_x[len(indexes)-2] == index - 1:
+                    ind_cons.append([k - 1, k])
+                k += 1
+    return (np.array(ind_x), np.array(ind_wind), np.array(ind_csp), np.array(ind_cons))
 
 # Results grid with 3 decision variable per cell (x_wind, x_pv, x_csp)
 def writeResultsGrid(output_file, n, lats, lon, res):

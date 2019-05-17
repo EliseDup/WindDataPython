@@ -13,8 +13,7 @@ import Calculation
 import time
 
 def main():
-    inputs = 'inputs/params'
-    results_maximiseNetEnergyCell(inputs, 'outputs/test_netE', False, 100)
+    results_maximiseNetEnergyCell(Calculation.inputs_params, 'outputs/test_netE', False, 100)
            
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size):
     t0 = time.time()
@@ -48,22 +47,11 @@ def maximiseNetEnergyCell(area, c, k, ghi, dni, embodiedE1y_wind, operationE_win
         res = minimize(obj, x0=(1.0, 1.0, 1.0, 11.0, 10.0, 2.7), bounds=[(0, 1.0), (0, 1.0), (0, 1.0), (10.0, 16.0), (1.0, 20.0), (1.0, 4.0)], constraints=[cons], method='trust-constr')
         return (-obj(res.x), np.append(res.x,Calculation.capacityFactor(c, k, res.x[3])))
 
-def getIndexes(area):
-    ind_x = []; ind_wind = []; ind_csp = []; ind_cons = [];
-    for i in range(0, len(area) / 3):
-        for j in range(0, 3):
-            index = i * 3 + j
-            if area[i * 3 + j] > 0:
-                ind_x.append(index)
-                if j == 0: ind_wind.append(index)
-                if j == 2: ind_csp.append(index)
-                if j == 2 and ind_x[len(indexes)-2] == index - 1:
-                    ind_cons.append([index - 1, index])
-    return (np.array(ind_x), np.array(ind_wind), np.array(ind_csp), np.array(ind_cons))
 
+# To do -> Not possible with Pulp  as the objective is non linear ?
 def maximiseNetEnergy(area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind):
     area = area.flatten();
-    (ind_x, ind_wind, ind_csp, ind_cons) = getIndexes(area)
+    (ind_x, ind_wind, ind_csp, ind_cons) = Calculation.getIndexes(area)
     
     my_lp_problem = pulp.LpProblem("NE Maximisation", pulp.LpMaximize)
     
