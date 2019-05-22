@@ -6,9 +6,9 @@ from datetime import datetime
 from scipy.special import gammainc
 from matplotlib.pyplot import plot
 
-inputs_simple = 'inputs/inputs_sf'
-inputs_simple_total = 'inputs/simple_total'
-inputs_params = 'inputs/params'
+inputs_simple = 'inputs/inputs_simple_sf'
+inputs_simple_total = 'inputs/inputs_simple_total'
+inputs_params = 'inputs/inputs_params_sf'
 
 # Generic function for the inequality constraint x[1] + x[2] <= 1
 def non_complementary_constraint(i, j):
@@ -30,7 +30,8 @@ def loadData(opti_inputs):
      embodiedE1y_wind = data[:, 9]
      operationE_wind = data[:, 10]
      avail_wind = data[:, 11]
-     return (lats, lon, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind)
+     keMax = data[:,12]
+     return (lats, lon, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind, keMax)
 
 def loadDataSimpleModel(opti_inputs):
      data = genfromtxt(opti_inputs, delimiter='\t', dtype=None)
@@ -142,16 +143,15 @@ def getIndexes(area):
             index = i * 3 + j
             if area[i * 3 + j] > 0:
                 ind_x.append(index)
-                if j == 0: ind_wind.append(index)
-                if j == 2: ind_csp.append(index)
+                if j == 0: ind_wind.append([k,index])
+                if j == 2: ind_csp.append([k,index])
                 if j == 2 and ind_x[len(indexes)-2] == index - 1:
                     ind_cons.append([k - 1, k])
                 k += 1
-    return (np.array(ind_x), np.array(ind_wind), np.array(ind_csp), np.array(ind_cons))
+    return (np.array(ind_x), np.array(ind_cons), np.array(ind_wind), np.array(ind_csp))
 
 # Results grid with 3 decision variable per cell (x_wind, x_pv, x_csp)
 def writeResultsGrid(output_file, start, n, lats, lon, res):
-    print len(res[1])
     output = open(output_file, 'w')
     for i in range(0, n):
        output.write(str(lats[i+start]) + "\t" + str(lon[i+start]) + "\t")

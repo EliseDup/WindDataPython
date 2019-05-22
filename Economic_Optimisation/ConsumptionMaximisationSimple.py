@@ -27,7 +27,7 @@ vF = 4
 # Consumption in Dollars !!
 
 def main():
-    res = results_maximiseConsumptionGrid(Calculation.inputs_simple, 'outputs/test_cons', False, 1000, 2000, qF, vF)
+    res = results_maximiseConsumptionGrid(Calculation.inputs_simple, 'outputs/test_cons', False, 10000, 20000, qF, vF)
     
 # Start is the first index used to compute results, size is the size of the cells where the optimization is completed
 def results_maximiseConsumptionGrid(opti_inputs, output_file, total, start, size, qF = qF, vF = vF):
