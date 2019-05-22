@@ -11,25 +11,25 @@ import pulp
 
 # Pulp is faster than scipy.optimize.minimize !
 def main():
-    #results_maximiseNetEnergyCell(Calculation.inputs_simple, 'outputs/netE_Simple_Cell', False, 1000, True)
+    results_maximiseNetEnergyCell(Calculation.inputs_simple, 'outputs/netE_Simple_Cell', False, 25000, 5000, True)
     #results_maximiseNetEnergyCell(inputs, 'outputs/test2', False, 100, False)
-    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'outputs/netE_Simple_Grid', False, 10000, True)
+    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'outputs/netE_Simple_Grid_KEMax', False, 25000, 5000, True)
     #results_maximiseNetEnergyGrid(inputs, 'outputs/test4', False, 100, False)
        
-def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size, pulp):
+def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size, pulp):
     t0 = time.time()
     (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
-        n = len(lats) 
+        n = len(lats); start = 0;
     else:
         n = size
     print "# Cells:", n
     
     output = open(output_file, 'w')
     total = 0
-    for i in range(0, n):
-        if(i % (n/10) == 0):
-            print "Progress ", round(float(i)/float(n)*100), "%"
+    for i in range(start, n+start):
+        if((i-start) % (n/10) == 0):
+            print "Progress ", round(float(i-start)/float(n)*100), "%"
         if pulp:
             res = maximiseNetEnergy_Pulp(area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i], keMax[i])
         else:
@@ -40,20 +40,20 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, size, pulp):
     print "Results Grid ", total / 1E6, " TWh "
     print "Optimization cell per cell completed in ", (time.time() - t0), " seconds"
     
-def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, size, pulp):
+def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, start, size, pulp):
     t0 = time.time()
     (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
-        n = len(lats)
+        n = len(lats); start = 0;
     else: 
         n = size
     print "# Cells:", n
     if pulp:
-        res = maximiseNetEnergy_Pulp(area[0:n, :], eff[0:n, :], ressources[0:n, :], installed_capaciy_density[0:n, :], operationE[0:n, :], embodiedE1y[0:n, :], keMax[0:n])
+        res = maximiseNetEnergy_Pulp(area[start:n+start, :], eff[start:n+start, :], ressources[start:n+start, :], installed_capaciy_density[start:n+start, :], operationE[start:n+start, :], embodiedE1y[start:n+start, :], keMax[start:n+start])
     else:
-        res = maximiseNetEnergyGrid(area[0:n, :], eff[0:n, :], ressources[0:n, :], installed_capaciy_density[0:n, :], operationE[0:n, :], embodiedE1y[0:n, :])
+        res = maximiseNetEnergyGrid(area[start:n+start, :], eff[start:n+start, :], ressources[start:n+start, :], installed_capaciy_density[start:n+start, :], operationE[start:n+start, :], embodiedE1y[start:n+start, :])
     print "Results Grid ", res[0] / 1E6, " TWh "
-    Calculation.writeResultsGrid(output_file, n, lats, lon, res)
+    Calculation.writeResultsGrid(output_file, start, n, lats, lon, res)
     print "Optimization for the whole grid ends in ", (time.time() - t0), " seconds"
 
 def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y, keMax):
@@ -61,7 +61,7 @@ def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, ope
     installed_capaciy_density = installed_capaciy_density.flatten();operationE = operationE.flatten();embodiedE1y = embodiedE1y.flatten()
     n = len(area)
     
-    if(sum(area) < 0.001):
+    if(sum(area) == 0):
         return(0.0, np.zeros(n))
     else:
         my_lp_problem = pulp.LpProblem("NE Maximisation Cell", pulp.LpMaximize)
@@ -76,7 +76,11 @@ def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, ope
             my_lp_problem += x[i[0]] + x[i[1]] <= 1
         # Constraints: max KE generation for wind 
         for i in indexes[2]:
-            my_lp_problem += x[i]*area[i]*ressources[i]*eff[i] <= keMax[i]
+            if len(area) == 3:
+                ke = keMax
+            else:
+                ke = keMax[i[1]/3]
+            my_lp_problem += x[i[0]]*area[i[1]]*ressources[i[1]]*eff[i[1]] <= ke
             
         my_lp_problem.solve()
         

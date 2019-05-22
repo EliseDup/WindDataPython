@@ -1,7 +1,7 @@
 import math
-
-# The following code returns the distance between to locations based on each point’s longitude and latitude. 
-# The distance returned is relative to Earth’s radius. 
+import numpy
+# The following code returns the distance between to locations based on each points longitude and latitude. 
+# The distance returned is relative to Earths radius. 
 # To get the distance in miles, multiply by 3960. To get the distance in kilometers, multiply by 6373.
 
 def distance_on_unit_sphere(lat1, long1, lat2, long2):

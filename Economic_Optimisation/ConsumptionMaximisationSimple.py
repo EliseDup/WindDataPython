@@ -12,45 +12,46 @@ import Calculation
 import pulp
 
 # Parameters of the economy
-# Y = E / qF = K / vF
+# Y = E / qF = K / vF [$]
 # C = Y - delta_E K_E - delta_F K_F = (1 - delta_F) / vF * E - delta_E / q_F * \tilde{K}_E
 # E is the energy available for the economy ( = Gross E - Operation E)
 # \tilde{K}_E is the energy embodied in the energy sector capital stock
 # delta are depreciation rates
 deltaE = 1.0/25
 deltaF = 1.0/20
-qF = 1
-vF = 19.8
+# Estimated based on statistical data : PIB and secondary energy supply
+qF = 0.002
+# Considering the value of 4.3 from Picketty as an upper bound for the world capital ratio
+vF = 4
+
+# Consumption in Dollars !!
 
 def main():
-    output = open("q_v", 'w')
-    for q in range(5,10):
-        for v in range(5,10):
-            res = results_maximiseConsumptionGrid(Calculation.inputs_simple, 'outputs/test_cons', False, 100,q,v)
-            output.write(str(q) + "\t" + str(v) + "\t" + str(res[0]) + "\t" + str(res[1]) + "\n")
-    output.close()
-       
-def results_maximiseConsumptionGrid(opti_inputs, output_file, total, size, qF = qF, vF = vF):
+    res = results_maximiseConsumptionGrid(Calculation.inputs_simple, 'outputs/test_cons', False, 1000, 2000, qF, vF)
+    
+# Start is the first index used to compute results, size is the size of the cells where the optimization is completed
+def results_maximiseConsumptionGrid(opti_inputs, output_file, total, start, size, qF = qF, vF = vF):
     t0 = time.time()
-    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE) =  Calculation.loadDataSimpleModel(opti_inputs)
+    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) =  Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
         n = len(lats) 
+        start = 0
     else: 
         n = size
-        
+          
     print "# Cells:", n
     output = open(output_file, 'w')
-    res = maximiseConsumptionGrid(qF,vF,area[0:n, :], eff[0:n, :], ressources[0:n, :], installed_capaciy_density[0:n, :], operationE[0:n, :], embodiedE1y[0:n, :])
+    res = maximiseConsumptionGrid(qF,vF,start,area[start:n+start, :], eff[start:n+start, :], ressources[start:n+start, :], installed_capaciy_density[start:n+start, :], operationE[start:n+start, :], embodiedE1y[start:n+start, :], keMax[start:n+start])
     
-    print "Total consumption ", res[0] / 1E6, " TWh "
-    print "Net Energy Grid ", res[2]/1E6, " TWh "
-    Calculation.writeResultsGrid(output_file, n, lats, lon, res)
+    print "Total consumption ", round(res[0] / 1E6), "M US$ "
+    print "Net Energy Grid ", round(res[2]/1E6), " TWh "
+    Calculation.writeResultsGrid(output_file, start, n, lats, lon, res)
     print "Consumption Maximisation grid completed in ", (time.time() - t0), " seconds" 
     
     return (res[0]/1E6, res[2]/1E6)
 
 # Maximise the consumption on the whole grid
-def maximiseConsumptionGrid(qF,vF,area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
+def maximiseConsumptionGrid(qF,vF, start, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y, keMax):
     area = area.flatten();eff = eff.flatten();ressources = ressources.flatten()
     installed_capaciy_density = installed_capaciy_density.flatten();operationE = operationE.flatten();embodiedE1y = embodiedE1y.flatten()
     n = len(area)
@@ -68,10 +69,15 @@ def maximiseConsumptionGrid(qF,vF,area, eff, ressources, installed_capaciy_densi
         # Constraints
         for i in indexes[1]:
             my_lp_problem += x[i[0]] + x[i[1]] <= 1
+        for i in indexes[2]:
+            my_lp_problem += x[i[0]]*area[i[1]]*ressources[i[1]]*eff[i[1]] <= keMax[i[1]/3]
+            
         my_lp_problem.solve()
         x_res = np.zeros(n); j = 0;
         for i in indexes[0]:
-            x_res[i] = (my_lp_problem.variables()[j].varValue); j = j + 1;
+            x_res[i] = (my_lp_problem.variables()[j].varValue); 
+            j = j + 1;
+        print "Size results ", len(x_res)    
         netE = Calculation.netEnergySimpleModel(x_res, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y)
         return (pulp.value(my_lp_problem.objective), x_res, netE)
 

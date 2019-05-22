@@ -11,15 +11,18 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 
 def main():
-     plotData("results_simple_model", 2, "out")
-    #plotData("../WindPotentialScala/EROI", 2,'EROI_PV',xLabel="EROI Mono-Si PV")
+     plotData("../WindPotentialScala/wind_eroi", 2, "Wind_EROI", xLabel="EROI Wind", save = True, subplot=False)
+     #plotData("results_eco/results_simple_x_cell_total_10_05", 3, "max_net_e", xLabel="Wind",subplot_size=3,subplot_index=1)
+     #plotData("results_eco/results_simple_x_cell_total_10_05", 4, "max_net_e",xLabel="PV",subplot_size=3,subplot_index=2)
+     #plotData("results_eco/results_simple_x_cell_total_10_05", 5, "max_net_e",xLabel="CSP",subplot_size=3, subplot_index=3)
+    
     # plotData("../WindPotentialScala/EROI", 3,'EROI_CSP',xLabel="EROI CSPPT-12h TES")
     # plotData('solar',3,'',xLabel="Solar PV",subplot_size=2,subplot_index=1)
     # plotData('solar',4,'solar_csp_pv',xLabel="Solar CSP",subplot_size=2,subplot_index=2,save=True)
     
      plt.show()
 
-def plotData(csvFile, index, output, xLabel="", save=False, subplot=False, subplot_size = 1, subplot_index = 1):
+def plotData(csvFile, index, output, xLabel="", save=False, subplot=True, subplot_size = 1, subplot_index = 1):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
      #### data preparation 
@@ -41,7 +44,7 @@ def plotData(csvFile, index, output, xLabel="", save=False, subplot=False, subpl
     
     map.drawcoastlines()
     map.drawstates()
-    plt.xlabel(xLabel)
+    # plt.xlabel(xLabel)
     map.drawcountries()
     # map.drawlsmask(land_color='coral',ocean_color='blue') 
     print "Maximum ", max(values), " - Minimum ", min(values)
@@ -54,7 +57,7 @@ def plotData(csvFile, index, output, xLabel="", save=False, subplot=False, subpl
                       #np.linspace(0.01, 3, 250, endpoint=True), tri=True ) #, latlon=True
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.arange(0,10,1))
+    cbar.set_ticks(np.arange(0,20,2))
     
     if save :
         # High resolution

@@ -81,7 +81,11 @@ def netEnergy(x, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_
     return netEnergyWind(x[0], area[0], x[3], x[4], c, k, embodiedE1y_wind, operationE_wind, avail_wind) + netEnergyPV(x[1], area[1], ghi) + netEnergyCSP(x[2], area[2], dni, x[5])
 
 def netEnergyWind(x, area, vr, n, c, k, embodiedE1y_wind, operationE_wind, avail_wind):
-    return x * area * installedCapacityDensityWind(vr, n) * ((capacityFactor(c, k, vr) * arrayEfficiency(n) * avail_wind * (365 * 24) * (1 - operationE_wind)) - embodiedE1y_wind)
+    return energyWind(x, area, vr, n, c, k, operationE_wind, avail_wind) - x * area * installedCapacityDensityWind(vr, n) * embodiedE1y_wind
+
+def energyWind(x, area, vr, n, c, k, operationE_wind, avail_wind):
+    return x * area * installedCapacityDensityWind(vr, n) * capacityFactor(c, k, vr) * arrayEfficiency(n) * avail_wind * (365 * 24) * (1 - operationE_wind)
+                                                             
 def netEnergyPV(x, area, ghi):
     return x * area * (efficiency_PV * ghi * (365 * 24) * (1 - operationE_PV) - installed_capacity_density_PV * embodiedE1y_PV)
 def netEnergyCSP(x, area, dni, sm):
@@ -125,7 +129,7 @@ def getIndexesSimpleModel(area):
             if area[i * 3 + j] > 0:
                 indexes.append(index)
                 if j == 0:
-                    indexes_wind.append(k)
+                    indexes_wind.append([k,index])
                 if j == 2 and indexes[len(indexes)-2] == index - 1:
                     indexes_cons.append([k - 1, k])
                 k += 1
@@ -146,10 +150,11 @@ def getIndexes(area):
     return (np.array(ind_x), np.array(ind_wind), np.array(ind_csp), np.array(ind_cons))
 
 # Results grid with 3 decision variable per cell (x_wind, x_pv, x_csp)
-def writeResultsGrid(output_file, n, lats, lon, res):
+def writeResultsGrid(output_file, start, n, lats, lon, res):
+    print len(res[1])
     output = open(output_file, 'w')
     for i in range(0, n):
-       output.write(str(lats[i]) + "\t" + str(lon[i]) + "\t")
+       output.write(str(lats[i+start]) + "\t" + str(lon[i+start]) + "\t")
        resIndex = i * 3; x = np.zeros(3);
        for j in range(0, 3):
            x[j] = res[1][resIndex + j]
