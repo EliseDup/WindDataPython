@@ -10,6 +10,8 @@ inputs_simple = 'inputs/inputs_simple_sf'
 inputs_simple_total = 'inputs/inputs_simple_total'
 inputs_params = 'inputs/inputs_params_sf'
 
+def main():
+    print "Hello"
 # Generic function for the inequality constraint x[1] + x[2] <= 1
 def non_complementary_constraint(i, j):
     def g(x):
@@ -74,12 +76,17 @@ def embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y):
 # C = E/qF - deltaE tilde{K}E / qF - deltaF E vF / qF
 # ==> C = E ( (1-deltaF vF)/qF ) - deltaE/qF tilde{K}E
 def consumptionSimple(qF, vF, deltaE, deltaF, x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
-    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, operationE) - deltaE/qF * embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
+    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, operationE) - deltaE*vF/qF * embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
 
+def netEnergyScalar(x, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind):
+    return netEnergyWind(x[0], area[0], x[3], x[4], c, k, embodiedE1y_wind, operationE_wind, avail_wind) + netEnergyPV(x[1], area[1], ghi) + netEnergyCSP(x[2], area[2], dni, x[5])
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
 # x is the vector corresponding to the % of each cells covered by a given technology
 def netEnergy(x, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind):
-    return netEnergyWind(x[0], area[0], x[3], x[4], c, k, embodiedE1y_wind, operationE_wind, avail_wind) + netEnergyPV(x[1], area[1], ghi) + netEnergyCSP(x[2], area[2], dni, x[5])
+    total = 0
+    for i in range(0, len(c)):
+        total += netEnergyWind(x[i*6], area[i*3], x[i*6+3], x[i*6+4], c[i], k[i], embodiedE1y_wind[i], operationE_wind[i], avail_wind[i]) + netEnergyPV(x[i*6+1], area[i*3+1], ghi[i]) + netEnergyCSP(x[i*6+2], area[i*3+2], dni[i], x[i*6+5])
+    return total
 
 def netEnergyWind(x, area, vr, n, c, k, embodiedE1y_wind, operationE_wind, avail_wind):
     return energyWind(x, area, vr, n, c, k, operationE_wind, avail_wind) - x * area * installedCapacityDensityWind(vr, n) * embodiedE1y_wind
@@ -151,16 +158,14 @@ def getIndexes(area):
     return (np.array(ind_x), np.array(ind_cons), np.array(ind_wind), np.array(ind_csp))
 
 # Results grid with 3 decision variable per cell (x_wind, x_pv, x_csp)
-def writeResultsGrid(output_file, start, n, lats, lon, res):
+def writeResultsGrid(output_file, start, n, lats, lon, res, nX=3):
     output = open(output_file, 'w')
     for i in range(0, n):
        output.write(str(lats[i+start]) + "\t" + str(lon[i+start]) + "\t")
-       resIndex = i * 3; x = np.zeros(3);
-       for j in range(0, 3):
+       resIndex = i * nX; x = np.zeros(nX);
+       for j in range(0, nX):
            x[j] = res[1][resIndex + j]
-       # netE = netEnergy(x, area[i], eff[i], ressources[i], installed_capaciy_density[i], operationE[i], embodiedE1y[i])
-       # output.write(str(netE / 1000) + "\t")
-       output.write(str(x[0]) + "\t" + str(x[1]) + "\t" + str(x[2]))
+           output.write(str(x[j]) + "\t")      
        output.write("\n")
     output.close()
     return
@@ -172,3 +177,6 @@ def writeResultsCell(output, lat, lon, res):
         output.write("\t" + str(res[1][i]))
     output.write("\n")
     return
+
+if __name__ == "__main__":
+    sys.exit(main())

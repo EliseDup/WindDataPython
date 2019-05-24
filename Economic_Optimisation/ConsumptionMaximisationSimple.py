@@ -19,15 +19,14 @@ import pulp
 # delta are depreciation rates
 deltaE = 1.0/25
 deltaF = 1.0/20
-# Estimated based on statistical data : PIB and secondary energy supply
+# Estimated based on statistical data : PIB and secondary energy supply [MWh/US$]
 qF = 0.002
 # Considering the value of 4.3 from Picketty as an upper bound for the world capital ratio
 vF = 4
 
-# Consumption in Dollars !!
-
+# Consumption in Dollars !
 def main():
-    res = results_maximiseConsumptionGrid(Calculation.inputs_simple, 'outputs/test_cons', False, 10000, 20000, qF, vF)
+    res = results_maximiseConsumptionGrid(Calculation.inputs_simple, 'outputs/test_cons', False, 10000, 1000, qF, vF)
     
 # Start is the first index used to compute results, size is the size of the cells where the optimization is completed
 def results_maximiseConsumptionGrid(opti_inputs, output_file, total, start, size, qF = qF, vF = vF):
@@ -43,7 +42,7 @@ def results_maximiseConsumptionGrid(opti_inputs, output_file, total, start, size
     output = open(output_file, 'w')
     res = maximiseConsumptionGrid(qF,vF,start,area[start:n+start, :], eff[start:n+start, :], ressources[start:n+start, :], installed_capaciy_density[start:n+start, :], operationE[start:n+start, :], embodiedE1y[start:n+start, :], keMax[start:n+start])
     
-    print "Total consumption ", round(res[0] / 1E6), "M US$ "
+    print "Total consumption ", round(res[0] / 1E9), "GUS$ ", round((res[0]/1E9/80935)*100), "% of 2017 data"
     print "Net Energy Grid ", round(res[2]/1E6), " TWh "
     Calculation.writeResultsGrid(output_file, start, n, lats, lon, res)
     print "Consumption Maximisation grid completed in ", (time.time() - t0), " seconds" 
@@ -61,6 +60,8 @@ def maximiseConsumptionGrid(qF,vF, start, area, eff, ressources, installed_capac
     else:
         my_lp_problem = pulp.LpProblem("NE Maximisation Consumption", pulp.LpMaximize)
         indexes = Calculation.getIndexesSimpleModel(area)
+        
+        print len(indexes[0]), " decision variables"
         x = []
         for i in indexes[0]:
             x.append(pulp.LpVariable('x' + str(i), lowBound=0, upBound=1, cat='Continuous'))
@@ -77,7 +78,7 @@ def maximiseConsumptionGrid(qF,vF, start, area, eff, ressources, installed_capac
         for i in indexes[0]:
             x_res[i] = (my_lp_problem.variables()[j].varValue); 
             j = j + 1;
-        print "Size results ", len(x_res)    
+        
         netE = Calculation.netEnergySimpleModel(x_res, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y)
         return (pulp.value(my_lp_problem.objective), x_res, netE)
 
