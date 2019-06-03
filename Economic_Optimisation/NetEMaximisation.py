@@ -13,8 +13,8 @@ import Calculation
 import time
 
 def main():
-    results_maximiseNetEnergyGrid('inputs/inputs_params_sf', 'outputs/test_grid', False, 0, 50)
-    results_maximiseNetEnergyCell('inputs/inputs_params_sf', 'outputs/test_cell', False, 0, 50)
+    results_maximiseNetEnergyGrid('inputs/inputs_params_sf', 'outputs/test_grid', False, 0, 100)
+    results_maximiseNetEnergyCell('inputs/inputs_params_sf', 'outputs/test_cell', False, 0, 100)
            
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size):
     t0 = time.time()

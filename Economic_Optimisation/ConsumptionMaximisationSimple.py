@@ -26,7 +26,7 @@ vF = 4
 
 # Consumption in Dollars !
 def main():
-    res = results_maximiseConsumptionGrid(Calculation.inputs_simple, 'outputs/test_cons', False, 10000, 1000, qF, vF)
+    res = results_maximiseConsumptionGrid('inputs_simple_sf', 'consumptionMax', True, 0, 10000, qF, vF)
     
 # Start is the first index used to compute results, size is the size of the cells where the optimization is completed
 def results_maximiseConsumptionGrid(opti_inputs, output_file, total, start, size, qF = qF, vF = vF):
@@ -41,7 +41,7 @@ def results_maximiseConsumptionGrid(opti_inputs, output_file, total, start, size
     print "# Cells:", n
     output = open(output_file, 'w')
     res = maximiseConsumptionGrid(qF,vF,start,area[start:n+start, :], eff[start:n+start, :], ressources[start:n+start, :], installed_capaciy_density[start:n+start, :], operationE[start:n+start, :], embodiedE1y[start:n+start, :], keMax[start:n+start])
-    
+    print res[0] / 1E9
     print "Total consumption ", round(res[0] / 1E9), "GUS$ ", round((res[0]/1E9/80935)*100), "% of 2017 data"
     print "Net Energy Grid ", round(res[2]/1E6), " TWh "
     Calculation.writeResultsGrid(output_file, start, n, lats, lon, res)
@@ -58,15 +58,17 @@ def maximiseConsumptionGrid(qF,vF, start, area, eff, ressources, installed_capac
     if(sum(area) < 0.001):
         return(0.0, np.zeros(n), 0.0)
     else:
-        my_lp_problem = pulp.LpProblem("NE Maximisation Consumption", pulp.LpMaximize)
+        my_lp_problem = pulp.LpProblem("Consumption Maximisation", pulp.LpMaximize)
         indexes = Calculation.getIndexesSimpleModel(area)
         
         print len(indexes[0]), " decision variables"
+        
         x = []
         for i in indexes[0]:
             x.append(pulp.LpVariable('x' + str(i), lowBound=0, upBound=1, cat='Continuous'))
         # Objective function
-        my_lp_problem += Calculation.consumptionSimple(qF, vF, deltaE, deltaF, x, area[indexes[0]], eff[indexes[0]], ressources[indexes[0]], installed_capaciy_density[indexes[0]], operationE[indexes[0]], embodiedE1y[indexes[0]]), "Z"
+        my_lp_problem += Calculation.consumptionSimple2(qF, vF, deltaE, deltaF, x, area[indexes[0]], eff[indexes[0]], ressources[indexes[0]], installed_capaciy_density[indexes[0]], operationE[indexes[0]], embodiedE1y[indexes[0]]), "Z"
+        
         # Constraints
         for i in indexes[1]:
             my_lp_problem += x[i[0]] + x[i[1]] <= 1
@@ -74,10 +76,10 @@ def maximiseConsumptionGrid(qF,vF, start, area, eff, ressources, installed_capac
             my_lp_problem += x[i[0]]*area[i[1]]*ressources[i[1]]*eff[i[1]] <= keMax[i[1]/3]
             
         my_lp_problem.solve()
+        
         x_res = np.zeros(n); j = 0;
         for i in indexes[0]:
-            x_res[i] = (my_lp_problem.variables()[j].varValue); 
-            j = j + 1;
+            x_res[i] = (x[j].varValue); j = j + 1;
         
         netE = Calculation.netEnergySimpleModel(x_res, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y)
         return (pulp.value(my_lp_problem.objective), x_res, netE)

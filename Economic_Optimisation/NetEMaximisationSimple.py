@@ -11,7 +11,7 @@ import pulp
 
 # Pulp is faster than scipy.optimize.minimize !
 def main():
-    results_maximiseNetEnergyGrid('inputs_simple_sf', 'netesimple_grid', True, 0, 1000, True)
+    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'outputs/nete', False, 0, 5000, True)
       
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size, pulp):
     t0 = time.time()
@@ -61,12 +61,13 @@ def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, ope
     if(sum(area) == 0):
         return(0.0, np.zeros(n))
     else:
-        my_lp_problem = pulp.LpProblem("NE Maximisation Cell", pulp.LpMaximize)
+        my_lp_problem = pulp.LpProblem("Net Energy Maximisation Simple", pulp.LpMaximize)
         indexes = Calculation.getIndexesSimpleModel(area)
         nX = len(indexes[0])
         if(nX > 3):
             print nX, " decision variables"
         x = []
+        
         for i in indexes[0]:
             x.append(pulp.LpVariable('x' + str(i), lowBound=0, upBound=1, cat='Continuous'))
         # Objective function
@@ -87,7 +88,7 @@ def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, ope
         x_res = np.zeros(n); j = 0;
         for i in indexes[0]:
             x_res[i] = (x[j].varValue); j = j + 1;
-           
+  
         return (pulp.value(my_lp_problem.objective), x_res)
 # Maximise the net energy produced on one cell: only 3 variables
 def maximiseNetEnergyCell(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y, keMax):
