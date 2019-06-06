@@ -15,7 +15,7 @@ def main():
       
 def results_maximiseEROICell(opti_inputs, output_file, total, start, size):
     t0 = time.time()
-    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
+    (lats, lon, total_area, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
         n = len(lats); start = 0;
     else:

@@ -26,27 +26,29 @@ def binary_bounds(n):
 def loadData(opti_inputs):
      data = genfromtxt(opti_inputs, delimiter='\t', dtype=None)
      lats = data[:, 0]; lon = data[:, 1]
-     # Potential suitable area for each tecnology
-     area = data[:, 2:5]
-     c = data[:, 5]; k = data[:, 6]; ghi = data[:, 7]; dni = data[:, 8]
-     embodiedE1y_wind = data[:, 9]
-     operationE_wind = data[:, 10]
-     avail_wind = data[:, 11]
-     keMax = data[:,12]
-     return (lats, lon, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind, keMax)
+     total_area = data[:, 2]
+     # Potential suitable area for each technology
+     area = data[:, 3:6]
+     c = data[:, 6]; k = data[:, 7]; ghi = data[:, 8]; dni = data[:, 9]
+     embodiedE1y_wind = data[:, 10]
+     operationE_wind = data[:, 11]
+     avail_wind = data[:, 12]
+     keMax = data[:,13]
+     return (lats, lon, total_area, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind, keMax)
 
 def loadDataSimpleModel(opti_inputs):
      data = genfromtxt(opti_inputs, delimiter='\t', dtype=None)
      lats = data[:, 0]; lon = data[:, 1]
+     total_area = data[:, 2]
      # Potential suitable area for each tecnology
-     area = data[:, 2:5]
-     eff = data[:, 5:8]
-     ressources = data[:, 8:11]
-     installed_capaciy_density = data[:, 11:14]
-     embodiedE1y = data[:, 14:17]
-     operationE = data[:, 17:20]
-     keMax = data[:, 20]
-     return (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax)
+     area = data[:, 3:6]
+     eff = data[:, 6:9]
+     ressources = data[:, 9:12]
+     installed_capaciy_density = data[:, 12:15]
+     embodiedE1y = data[:, 15:18]
+     operationE = data[:, 18:21]
+     keMax = data[:, 21]
+     return (lats, lon, total_area, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax)
           
 # Fixed inputs !
 efficiency_PV = 0.18622918619208484
@@ -63,12 +65,19 @@ defaultCSP_area = 13.533834586466165
 def netEnergySimpleModel(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
     return sum(production(x, area, eff, ressources, operationE) - embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
 
+def eroi(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y):
+    return sum(grossProduction(x, area, eff, ressources) / (operationE*grossProduction(x, area, eff, ressources)+embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y)))
+
 def production(x, area, eff, ressources, operationE):
     if len(area) == 1:
         one = 1
     else:
         one = np.ones(len(x))
     return x * area * eff * ressources * (365 * 24) * (one - operationE)
+
+def grossProduction(x, area, eff, ressources):
+    return x * area * eff * ressources * (365 * 24)
+
 def embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y): 
     return x * area * installed_capaciy_density * embodiedE1y 
 # C = Y - Ie - If
@@ -76,7 +85,10 @@ def embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y):
 # C = E/qF - deltaE tilde{K}E / qF - deltaF E vF / qF
 # ==> C = E ( (1-deltaF vF)/qF ) - deltaE/qF tilde{K}E
 def consumptionSimple(qF, vF, deltaE, deltaF, x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
-    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, operationE) - deltaE*vF/qF * embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
+    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, operationE) - vF/qF * embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
+
+def consumptionSimple2(qF, vF, deltaE, deltaF, x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
+    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, operationE) - 1/qF * embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
 
 def netEnergyScalar(x, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind):
     return netEnergyWind(x[0], area[0], x[3], x[4], c, k, embodiedE1y_wind, operationE_wind, avail_wind) + netEnergyPV(x[1], area[1], ghi) + netEnergyCSP(x[2], area[2], dni, x[5])
@@ -165,7 +177,25 @@ def writeResultsGrid(output_file, start, n, lats, lon, res, nX=3):
        resIndex = i * nX; x = np.zeros(nX);
        for j in range(0, nX):
            x[j] = res[1][resIndex + j]
-           output.write(str(x[j]) + "\t")      
+           output.write(str(x[j]) + "\t")
+       output.write("\n")
+    output.close()
+    return
+
+# Results grid with 3 decision variable per cell (x_wind, x_pv, x_csp)
+def writeDetailedResultsGrid(output_file, start, n, lats, lon, res, area, total_area, nX=3):
+    output = open(output_file, 'w')
+    for i in range(0, n):
+       output.write(str(lats[i+start]) + "\t" + str(lon[i+start]) + "\t")
+       resIndex = i * nX; x = np.zeros(nX);
+       for j in range(0, nX):
+           x[j] = res[1][resIndex + j]
+           if j<3:
+               area_x = area[i+start,j]*x[j]
+               output.write(str(x[j]) + "\t")
+               output.write(str(area_x) + "\t")
+               if total_area[i+start] > 0: output.write(str(area_x/total_area[i+start]) +"\t")
+               else: output.write("0.0" +"\t")
        output.write("\n")
     output.close()
     return
@@ -178,5 +208,16 @@ def writeResultsCell(output, lat, lon, res):
     output.write("\n")
     return
 
+def writeDetailedResultsCell(output, lat, lon, res, area, total_area):
+    output.write(str(lat) + "\t" + str(lon) + "\t")
+    output.write(str(res[0] / 1000))
+    for i in range(0, len(res[1])):
+        output.write("\t" + str(res[1][i]))
+        if i<3:
+            output.write("\t" + str(res[1][i]*area[i]))
+            output.write("\t" + str((res[1][i]*area[i])/total_area))
+        
+    output.write("\n")
+    return
 if __name__ == "__main__":
     sys.exit(main())

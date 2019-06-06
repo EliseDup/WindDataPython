@@ -31,7 +31,7 @@ def main():
 # Start is the first index used to compute results, size is the size of the cells where the optimization is completed
 def results_maximiseConsumptionGrid(opti_inputs, output_file, total, start, size, qF = qF, vF = vF):
     t0 = time.time()
-    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) =  Calculation.loadDataSimpleModel(opti_inputs)
+    (lats, lon, total_area, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) =  Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
         n = len(lats) 
         start = 0

@@ -11,7 +11,10 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 
 def main():
-     plotData("../WindPotentialScala/wind_eroi", 2, "Wind_EROI", xLabel="EROI Wind", save = True, subplot=False)
+     #plotData("../results_server/netESimple_Total", 2, "wind", xLabel="Wind", save = False, subplot=False)
+     plotData("../results_server/netESimple_Total", 3, "pv", xLabel="Solar PV", save = False, subplot=False)
+     #plotData("../results_server/netESimple_Total", 4, "csp", xLabel="Solar CSP", save = False, subplot=False)
+     
      #plotData("results_eco/results_simple_x_cell_total_10_05", 3, "max_net_e", xLabel="Wind",subplot_size=3,subplot_index=1)
      #plotData("results_eco/results_simple_x_cell_total_10_05", 4, "max_net_e",xLabel="PV",subplot_size=3,subplot_index=2)
      #plotData("results_eco/results_simple_x_cell_total_10_05", 5, "max_net_e",xLabel="CSP",subplot_size=3, subplot_index=3)
@@ -57,7 +60,7 @@ def plotData(csvFile, index, output, xLabel="", save=False, subplot=True, subplo
                       #np.linspace(0.01, 3, 250, endpoint=True), tri=True ) #, latlon=True
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.arange(0,20,2))
+    cbar.set_ticks(np.arange(0,1.2,0.2))
     
     if save :
         # High resolution

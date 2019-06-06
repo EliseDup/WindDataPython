@@ -11,11 +11,12 @@ import pulp
 
 # Pulp is faster than scipy.optimize.minimize !
 def main():
-    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'outputs/nete', False, 0, 5000, True)
+    #results_maximiseNetEnergyGrid('inputs_simple_total', 'netESimple_total', False, 0, 100, True)
+    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'netESimple_total', False, 0, 5000, True)
       
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size, pulp):
     t0 = time.time()
-    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
+    (lats, lon, total_area, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
         n = len(lats); start = 0;
     else:
@@ -39,7 +40,7 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size, 
     
 def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, start, size, pulp):
     t0 = time.time()
-    (lats, lon, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
+    (lats, lon, total_area, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax) = Calculation.loadDataSimpleModel(opti_inputs)
     if total: 
         n = len(lats); start = 0;
     else: 
@@ -50,7 +51,7 @@ def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, start, size, 
     else:
         res = maximiseNetEnergyGrid(area[start:n+start, :], eff[start:n+start, :], ressources[start:n+start, :], installed_capaciy_density[start:n+start, :], operationE[start:n+start, :], embodiedE1y[start:n+start, :], keMax[start:n+start])
     print "Results Grid ", res[0] / 1E6, " TWh "
-    Calculation.writeResultsGrid(output_file, start, n, lats, lon, res)
+    Calculation.writeDetailedResultsGrid(output_file, start, n, lats, lon, res, area, total_area)
     print "Optimization for ",n,"cells in ", (time.time() - t0), " seconds"
 
 def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y, keMax):

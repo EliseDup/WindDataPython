@@ -13,12 +13,13 @@ import Calculation
 import time
 
 def main():
-    results_maximiseNetEnergyGrid('inputs/inputs_params_sf', 'outputs/test_grid', False, 0, 100)
-    results_maximiseNetEnergyCell('inputs/inputs_params_sf', 'outputs/test_cell', False, 0, 100)
-           
+    inputs = Calculation.inputs_params #'inputs_params_total'
+    # results_maximiseNetEnergyCell(inputs, 'netEParamsCell_Total', False, 0, 100)
+    results_maximiseNetEnergyGrid(inputs, 'netEParamsGrid_Total', False, 0, 50)
+          
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size):
     t0 = time.time()
-    (lats, lon, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind, keMax) = Calculation.loadData(opti_inputs)
+    (lats, lon, total_area, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind, keMax) = Calculation.loadData(opti_inputs)
     if total: 
         n = len(lats); start = 0;
     else: 
@@ -31,7 +32,7 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size):
             print "Progress ", round(float(i-start)/float(n)*100), "%"
         res = maximiseNetEnergyCell(area[i], c[i], k[i], ghi[i], dni[i], embodiedE1y_wind[i],operationE_wind[i], avail_wind[i], keMax[i])
         total += res[0]
-        Calculation.writeResultsCell(output, lats[i], lon[i], res)
+        Calculation.writeDetailedResultsCell(output, lats[i], lon[i], res, area[i], total_area[i])
     output.close()
     
     print "Results Grid ", total / 1E6, " TWh "
@@ -39,7 +40,7 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size):
 
 def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, start, size):
     t0 = time.time()
-    (lats, lon, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind, keMax) = Calculation.loadData(opti_inputs)
+    (lats, lon, total_area, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind, keMax) = Calculation.loadData(opti_inputs)
     if total: 
         n = len(lats); start = 0;
     else: 
@@ -47,7 +48,7 @@ def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, start, size):
     print "# Cells:", n
     res = maximiseNetEnergyGrid(area[start:n+start, :], c[start:n+start], k[start:n+start], ghi[start:n+start], dni[start:n+start], embodiedE1y_wind[start:n+start],operationE_wind[start:n+start], avail_wind[start:n+start], keMax[start:n+start])
     print "Results Grid ", res[0] / 1E6, " TWh "
-    Calculation.writeResultsGrid(output_file, start, n, lats, lon, res, 6)
+    Calculation.writeDetailedResultsGrid(output_file, start, n, lats, lon, res, area, total_area, 6)
     print "Optimization for ",n,"cells in ", (time.time() - t0), " seconds"
 
 # Maximise the net energy produced on one cell: 3 variables x_ij + vr_i + n_i + SM_i
