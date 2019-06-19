@@ -9,10 +9,23 @@ from Tkconstants import BOTTOM
 from scipy.interpolate.interpolate import interp1d
 import math
 def main():
-    techs = ("Wind-onshore","Wind-offshore","mono-Si-PV","ST-salt-TES")
+    techs = ("Wind_solar","Wind-onshore","Wind-offshore","mono-Si-PV","ST-salt-TES")
     for t in techs:
+        print "---", t, "---"
         data = genfromtxt("../WindPotentialScala/"+t, delimiter='\t', dtype=None)
-        interpolation(data[:,0],data[:,1],2,xname="Embodied Energy [EJ/year]",yname=t+"Production [EJ/year]")
+        print "Gross Energy"
+        ge = interpolation(data[:,2],data[:,0],2,xname="Embodied Energy [EJ/year]",yname=t+" Production [EJ/year]")
+        ge_max_x = -ge.coeffs[1]/(2*ge.coeffs[0])
+        print round(ge.coeffs[0],2),"x^2+",round(ge.coeffs[1],2),"x+",round(ge.coeffs[2],2)
+        print "max from data", int(round(max(data[:,0])))
+        print "maximum in (", int(round(ge_max_x)),",",int(round(ge(ge_max_x))),")"
+    
+        print "Net Energy"
+        ne = interpolation(data[:,2],data[:,1],2,xname="Embodied Energy [EJ/year]",yname=t+" Net Production [EJ/year]")
+        ne_max_x = -ne.coeffs[1]/(2*ne.coeffs[0])
+        print round(ne.coeffs[0],2),"x^2+",round(ne.coeffs[1],2),"x+",round(ne.coeffs[2],2)
+        print "max from data", int(round(max(data[:,1])))
+        print "maximum in (", int(round(ne_max_x)),",",int(round(ne(ne_max_x))),")"
     
     plt.show()
     print "---"
@@ -20,7 +33,6 @@ def main():
 def interpolation(x, y, degree, plot=True, plotResidual=False, xname="",yname=""):
     print "Interpolation with ", x.size, " measurements"
     z = np.poly1d(np.polyfit(x, y, degree))
-    print z
     num = 0; den = 0; mean = sum(y) / y.size
     for i in range(0, x.size):
         xi = x[i] 
@@ -28,7 +40,7 @@ def interpolation(x, y, degree, plot=True, plotResidual=False, xname="",yname=""
         num += (yi - z(xi)) * (yi - z(xi))
         den += (yi - mean) * (yi - mean)
     rsquare = 1 - num / den
-    print 'R2 = ', rsquare
+    # print 'R2 = ', rsquare
     
     if (plot):
         plt.figure()
@@ -41,7 +53,7 @@ def interpolation(x, y, degree, plot=True, plotResidual=False, xname="",yname=""
             plt.plot(x, y - z(x),'.'); 
             plt.xlabel('R2='+str(rsquare)); plt.ylabel("Residuals");
         plt.draw();
-    
+    # print "(",z.coeffs[0],",",z.coeffs[1],",",z.coeffs[2],")"
     return z
 
 def ln_interpolation(x, y, plot=True, xname="",yname=""):

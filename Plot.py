@@ -11,21 +11,17 @@ from matplotlib.mlab import griddata
 from numpy import genfromtxt
 
 def main():
-     #plotData("../results_server/netESimple_Total", 2, "wind", xLabel="Wind", save = False, subplot=False)
-     plotData("../results_server/netESimple_Total", 3, "pv", xLabel="Solar PV", save = False, subplot=False)
-     #plotData("../results_server/netESimple_Total", 4, "csp", xLabel="Solar CSP", save = False, subplot=False)
-     
+     #plotData("../results_server/netESimple_total_kepersquaremeter", 2+2, "wind", xLabel="Wind", save = True, subplot=False)
+     #plotData("../results_server/netESimple_total_kepersquaremeter", 5+2, "pv", xLabel="Solar PV", save = True, subplot=False)
+     #plotData("../results_server/netESimple_total_kepersquaremeter", 8+2, "csp", xLabel="Solar CSP", save = True, subplot=False)
+    
      #plotData("results_eco/results_simple_x_cell_total_10_05", 3, "max_net_e", xLabel="Wind",subplot_size=3,subplot_index=1)
      #plotData("results_eco/results_simple_x_cell_total_10_05", 4, "max_net_e",xLabel="PV",subplot_size=3,subplot_index=2)
      #plotData("results_eco/results_simple_x_cell_total_10_05", 5, "max_net_e",xLabel="CSP",subplot_size=3, subplot_index=3)
-    
-    # plotData("../WindPotentialScala/EROI", 3,'EROI_CSP',xLabel="EROI CSPPT-12h TES")
-    # plotData('solar',3,'',xLabel="Solar PV",subplot_size=2,subplot_index=1)
-    # plotData('solar',4,'solar_csp_pv',xLabel="Solar CSP",subplot_size=2,subplot_index=2,save=True)
-    
+
      plt.show()
 
-def plotData(csvFile, index, output, xLabel="", save=False, subplot=True, subplot_size = 1, subplot_index = 1):
+def plotData(csvFile, index, output, xLabel="", save=True, subplot=True, subplot_size = 1, subplot_index = 1):
     
     data = genfromtxt(csvFile, delimiter='\t', dtype=None)
      #### data preparation 
@@ -54,13 +50,18 @@ def plotData(csvFile, index, output, xLabel="", save=False, subplot=True, subplo
     if(max(values)==0):
         return
     
-    cs = map.contourf(lons, lats, values,
-                      np.linspace(min(values)+0.01, max(values)+0.01, 
-                                  250, endpoint=True), tri=True ) #, latlon=True)
+    cs = map.contourf(lons, lats, values,np.linspace(min(values)+0.01, max(values)+0.01, 
+                                  250, endpoint=True), 
+                                  tri=True ) #, latlon=True)
                       #np.linspace(0.01, 3, 250, endpoint=True), tri=True ) #, latlon=True
+    
     cbar = map.colorbar(cs, location='bottom', pad="5%")
     cbar.set_label(xLabel)
-    cbar.set_ticks(np.arange(0,1.2,0.2))
+    
+    tick= round(max(values),1)/5
+    if tick==0: tick = max(values)/5
+    
+    #cbar.set_ticks(np.arange(0,max(values), tick))
     
     if save :
         # High resolution

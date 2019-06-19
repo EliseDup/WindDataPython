@@ -18,7 +18,8 @@ import pulp
 # \tilde{K}_E is the energy embodied in the energy sector capital stock
 # delta are depreciation rates
 deltaE = 1.0/25
-deltaF = 1.0/20
+
+deltaF = 1.0/15
 # Estimated based on statistical data : PIB and secondary energy supply [MWh/US$]
 qF = 0.002
 # Considering the value of 4.3 from Picketty as an upper bound for the world capital ratio
@@ -26,7 +27,7 @@ vF = 4
 
 # Consumption in Dollars !
 def main():
-    res = results_maximiseConsumptionGrid('inputs_simple_sf', 'consumptionMax', True, 0, 10000, qF, vF)
+    res = results_maximiseConsumptionGrid(Calculation.inputs_simple,'consumptionMax', True, 0, 10000, qF, vF)
     
 # Start is the first index used to compute results, size is the size of the cells where the optimization is completed
 def results_maximiseConsumptionGrid(opti_inputs, output_file, total, start, size, qF = qF, vF = vF):
@@ -73,7 +74,7 @@ def maximiseConsumptionGrid(qF,vF, start, area, eff, ressources, installed_capac
         for i in indexes[1]:
             my_lp_problem += x[i[0]] + x[i[1]] <= 1
         for i in indexes[2]:
-            my_lp_problem += x[i[0]]*area[i[1]]*ressources[i[1]]*eff[i[1]] <= keMax[i[1]/3]
+            my_lp_problem += x[i[0]]*ressources[i[1]]*eff[i[1]] <= keMax[i[1]/3]
             
         my_lp_problem.solve()
         

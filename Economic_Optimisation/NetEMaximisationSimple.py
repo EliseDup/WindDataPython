@@ -11,8 +11,10 @@ import pulp
 
 # Pulp is faster than scipy.optimize.minimize !
 def main():
-    #results_maximiseNetEnergyGrid('inputs_simple_total', 'netESimple_total', False, 0, 100, True)
-    results_maximiseNetEnergyGrid(Calculation.inputs_simple, 'netESimple_total', False, 0, 5000, True)
+    #inputs = Calculation.inputs_simple
+    #results_maximiseNetEnergyCell(inputs, 'netESimple_cell', True, 0, 1000, True)
+    results_maximiseNetEnergyGrid('inputs_simple_sf', 'netESimple_grid', True, 0, 1000, True)
+    #results_maximiseNetEnergyCell('inputs_simple_total', 'netESimple_cell_total', True, 0, 1000, True)
       
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size, pulp):
     t0 = time.time()
@@ -51,7 +53,9 @@ def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, start, size, 
     else:
         res = maximiseNetEnergyGrid(area[start:n+start, :], eff[start:n+start, :], ressources[start:n+start, :], installed_capaciy_density[start:n+start, :], operationE[start:n+start, :], embodiedE1y[start:n+start, :], keMax[start:n+start])
     print "Results Grid ", res[0] / 1E6, " TWh "
-    Calculation.writeDetailedResultsGrid(output_file, start, n, lats, lon, res, area, total_area)
+    #Calculation.writeDetailedResultsGrid(output_file, start, n, lats, lon, res, area, total_area)
+    Calculation.writeResultsGrid(output_file, start, n, lats, lon, res)
+    
     print "Optimization for ",n,"cells in ", (time.time() - t0), " seconds"
 
 def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y, keMax):
@@ -76,13 +80,13 @@ def maximiseNetEnergy_Pulp(area, eff, ressources, installed_capaciy_density, ope
         # Constraints: non complementary constraints for PV and CSP
         for i in indexes[1]:
             my_lp_problem += x[i[0]] + x[i[1]] <= 1
-        # Constraints: max KE generation for wind 
+        # Constraints: max KE generation for wind (ke in W/m^2 !!)
         for i in indexes[2]:
             if len(area) == 3:
                 ke = keMax
             else:
                 ke = keMax[i[1]/3]
-            my_lp_problem += x[i[0]]*area[i[1]]*ressources[i[1]]*eff[i[1]] <= ke
+            my_lp_problem += x[i[0]]*ressources[i[1]]*eff[i[1]] <= ke
              
         my_lp_problem.solve()
        
@@ -105,7 +109,7 @@ def maximiseNetEnergyCell(area, eff, ressources, installed_capaciy_density, oper
         for i in indexes[1]:
             cons.append({'type': 'ineq', 'fun' : Calculation.non_complementary_constraint(i[0], i[1])})
         for i in indexes[2]:
-            cons.append({'type': 'ineq', 'fun' : ke_constraint(i[0], area[i[1]], ressources[i[1]], eff[i[1]], keMax)})
+            cons.append({'type': 'ineq', 'fun' : ke_constraint(i[0], ressources[i[1]], eff[i[1]], keMax)})
             
         res = minimize(obj, x0=np.ones(n), bounds=Calculation.binary_bounds(n), constraints=cons, method='trust-constr')
         x_res = np.zeros(3); j = 0;
@@ -113,9 +117,9 @@ def maximiseNetEnergyCell(area, eff, ressources, installed_capaciy_density, oper
             x_res[i] = res.x[j]; j = j + 1;
         
         return (-obj(res.x), x_res)
-def ke_constraint(i, area, ressources, eff, ke):
+def ke_constraint(i, ressources, eff, ke):
     def g(x):
-        return np.array([-x[i]*area*ressources*eff+ke])
+        return np.array([-x[i]*ressources*eff+ke])
     return g    
 # Maximise the net energy produced for the whole grid: 3 variables / grid cell !
 def maximiseNetEnergyGrid(area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y, keMax):
@@ -129,11 +133,11 @@ def maximiseNetEnergyGrid(area, eff, ressources, installed_capaciy_density, oper
     def obj(x): 
         return -Calculation.netEnergySimpleModel(x, area[indexes[0]], eff[indexes[0]], ressources[indexes[0]], installed_capaciy_density[indexes[0]], operationE[indexes[0]], embodiedE1y[indexes[0]])
     
-    cons = []
+    cons = []          
     for i in indexes[1]:
         cons.append({'type': 'ineq', 'fun' : Calculation.non_complementary_constraint(i[0], i[1])})
     for i in indexes[2]:
-        cons.append({'type': 'ineq', 'fun' : ke_constraint(i[0], area[i[1]], ressources[i[1]], eff[i[1]], keMax[i[1]/3])})
+        cons.append({'type': 'ineq', 'fun' : ke_constraint(i[0], ressources[i[1]], eff[i[1]], keMax[i[1]/3])})
             
     res = minimize(obj, x0=np.ones(nX), bounds=Calculation.binary_bounds(nX), constraints=cons, method='trust-constr')
     x_res = np.zeros(n); j = 0;

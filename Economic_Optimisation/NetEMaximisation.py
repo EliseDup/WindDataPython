@@ -13,9 +13,11 @@ import Calculation
 import time
 
 def main():
-    inputs = Calculation.inputs_params #'inputs_params_total'
-    # results_maximiseNetEnergyCell(inputs, 'netEParamsCell_Total', False, 0, 100)
-    results_maximiseNetEnergyGrid(inputs, 'netEParamsGrid_Total', False, 0, 50)
+    inputs = Calculation.inputs_params
+    results_maximiseNetEnergyCell(inputs, 'netEParamsCell', True, 0, 200)
+    #results_maximiseNetEnergyCell('inputs_params_total', 'netEParamsCell_total', True, 0, 200)
+    
+    # results_maximiseNetEnergyGrid(inputs, 'netEParamsGrid_Total', False, 0, 100)
           
 def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size):
     t0 = time.time()
@@ -28,7 +30,7 @@ def results_maximiseNetEnergyCell(opti_inputs, output_file, total, start, size):
     total = 0
     output = open(output_file, 'w')
     for i in range(start, start+n):
-        if((i-start) % (n/10) == 0):
+        if(n >= 10 and (i-start) % (n/10) == 0):
             print "Progress ", round(float(i-start)/float(n)*100), "%"
         res = maximiseNetEnergyCell(area[i], c[i], k[i], ghi[i], dni[i], embodiedE1y_wind[i],operationE_wind[i], avail_wind[i], keMax[i])
         total += res[0]
@@ -48,7 +50,7 @@ def results_maximiseNetEnergyGrid(opti_inputs, output_file, total, start, size):
     print "# Cells:", n
     res = maximiseNetEnergyGrid(area[start:n+start, :], c[start:n+start], k[start:n+start], ghi[start:n+start], dni[start:n+start], embodiedE1y_wind[start:n+start],operationE_wind[start:n+start], avail_wind[start:n+start], keMax[start:n+start])
     print "Results Grid ", res[0] / 1E6, " TWh "
-    Calculation.writeDetailedResultsGrid(output_file, start, n, lats, lon, res, area, total_area, 6)
+    Calculation.writeDetailedResultsGrid(output_file, start, n, lats, lon, res, area, total_area, c, k, 6)
     print "Optimization for ",n,"cells in ", (time.time() - t0), " seconds"
 
 # Maximise the net energy produced on one cell: 3 variables x_ij + vr_i + n_i + SM_i
@@ -64,10 +66,9 @@ def maximiseNetEnergyCell(area, c, k, ghi, dni, embodiedE1y_wind, operationE_win
         
         cons = []
         cons.append({'type': 'ineq', 'fun' : Calculation.non_complementary_constraint(1, 2)})
-        cons.append({'type': 'ineq', 'fun' : ke_constraint(0, area[0], c, k, avail_wind, keMax)})
-        
+        cons.append({'type': 'ineq', 'fun' : ke_constraint(0, c, k, avail_wind, keMax)})
         res = minimize(obj, x0=(1.0, 1.0, 1.0, 11.0, 10.0, 2.7), bounds=[(0, 1.0), (0, 1.0), (0, 1.0), (10.0, 16.0), (1.0, 20.0), (1.0, 4.0)], constraints=cons, method='trust-constr')
-        
+    
         return (-obj(res.x), np.append(res.x,Calculation.capacityFactor(c, k, res.x[3])))
 
 # Maximise the net energy produced on one cell: 3 variables x_ij + vr_i + n_i + SM_i
@@ -90,9 +91,9 @@ def maximiseNetEnergyGrid(area, c, k, ghi, dni, embodiedE1y_wind, operationE_win
         
     return (-obj(res.x), res.x)
 
-def ke_constraint(i, area, c, k, avail_wind, keMax):
+def ke_constraint(i, c, k, avail_wind, keMax):
     def g(x):
-        return np.array([- x[i] * area * Calculation.installedCapacityDensityWind(x[i+3], x[i+4]) * Calculation.capacityFactor(c, k, x[i+3]) * Calculation.arrayEfficiency(x[i+4]) * avail_wind + keMax])
+        return np.array([- x[i] * Calculation.installedCapacityDensityWind(x[i+3], x[i+4]) * Calculation.capacityFactor(c, k, x[i+3]) * Calculation.arrayEfficiency(x[i+4]) * avail_wind + keMax])
     return g
 
 if __name__ == "__main__":
