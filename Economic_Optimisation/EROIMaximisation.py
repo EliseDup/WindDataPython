@@ -11,8 +11,9 @@ import pulp
 
 # Pulp is faster than scipy.optimize.minimize !
 def main():
-    #results_maximiseEROICell(Calculation.inputs_params, 'test_eroi_cell', False, 0, 1000)
-    results_maximiseEROIGrid(Calculation.inputs_params, 'test_eroi_grid', False, 0, 100)
+    inputs_params =  'inputs/inputs_params_sf' #Calculation.inputs_params 
+    #results_maximiseEROICell(inputs_params, 'eroi_params_cell', True, 0, 10)
+    results_maximiseEROIGrid(inputs_params, 'eroi_params_grid', False, 0, 1000)
       
 def results_maximiseEROICell(opti_inputs, output_file, total, start, size):
     t0 = time.time()

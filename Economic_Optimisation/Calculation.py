@@ -9,6 +9,14 @@ from matplotlib.pyplot import plot
 inputs_simple = 'inputs/inputs_simple_sf'
 inputs_simple_total = 'inputs/inputs_simple_total'
 inputs_params = 'inputs/inputs_params_sf'
+inputs_params_wind = 'inputs/inputs_params_wind'
+inputs_params_pv = 'inputs/inputs_params_pv'
+inputs_params_csp = 'inputs/inputs_params_csp'
+
+inputs_simple_onshore_wind =  inputs_simple+"Wind-onshore"
+inputs_simple_offshore_wind =  inputs_simple+"Wind-offshore"
+inputs_simple_pv = inputs_simple+"mono-Si-PV"
+inputs_simple_csp = inputs_simple+"ST-salt-TES"
 
 def main():
     print "Hello"
@@ -50,7 +58,34 @@ def loadDataSimpleModel(opti_inputs):
      operationE = data[:, 18:21]
      keMax = data[:, 21]
      return (lats, lon, total_area, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax)
-          
+ 
+def loadDataSimpleModelOneTech(opti_inputs):
+     data = genfromtxt(opti_inputs, delimiter='\t', dtype=None)
+     lats = data[:, 0]; lon = data[:, 1]
+     total_area = data[:, 2]
+     # Potential suitable area for each tecnology
+     area = data[:, 3]
+     eff = data[:, 4]
+     ressources = data[:, 5]
+     installed_capaciy_density = data[:, 6]
+     embodiedE1y = data[:, 7]
+     operationE = data[:, 8]
+     keMax = data[:, 9]
+     return (lats, lon, total_area, area, eff, ressources, installed_capaciy_density, embodiedE1y, operationE, keMax)
+
+def loadDataWind():
+    data = genfromtxt(inputs_params_wind, delimiter='\t', dtype=None)
+    # Lats, lons, area, suitable area, c, k, EE, OE, avail, keMax
+    return (data[:, 0],data[:, 1],data[:, 2],data[:, 3],data[:, 4],data[:, 5],data[:, 6],data[:, 7],data[:, 8],data[:, 9])
+def loadDataPV():
+    data = genfromtxt(inputs_params_pv, delimiter='\t', dtype=None)
+    # Lats, lons, area, suitable area, ghi
+    return (data[:, 0],data[:, 1],data[:, 2],data[:, 3],data[:, 4])
+def loadDataCSP():
+    data = genfromtxt(inputs_params_csp, delimiter='\t', dtype=None)
+    # Lats, lons, area, suitable area, dni
+    return (data[:, 0],data[:, 1],data[:, 2],data[:, 3],data[:, 4])
+         
 # Fixed inputs !
 efficiency_PV = 0.18622918619208484
 installed_capacity_density_PV = 240
@@ -69,6 +104,7 @@ def netEnergySimpleModel(x, area, eff, ressources, installed_capaciy_density, op
 def eroiSimpleModel(x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
     return sum(grossProduction(x, area, eff, ressources)) / (sum(operationE*grossProduction(x, area, eff, ressources)) + sum(embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y)))
 
+# Production in MWh
 def production(x, area, eff, ressources, operationE):
     if len(area) == 1:
         one = 1
@@ -83,11 +119,15 @@ def embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y):
     return x * area * installed_capaciy_density * embodiedE1y 
 # C = Y - Ie - If
 # C = E/qF - deltaE KE - deltaF KF
-# C = E/qF - deltaE tilde{K}E / qF - deltaF E vF / qF
-# ==> C = E ( (1-deltaF vF)/qF ) - deltaE/qF tilde{K}E
-def consumptionSimple(qF, vF, deltaE, deltaF, x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
-    return sum((1-deltaF*vF)/qF*production(x, area, eff, ressources, operationE) - vF/qF * embodiedEnergy(x, area, installed_capaciy_density, embodiedE1y))
+# C = E/qF (1- deltaF epsilonF vF) - cost_MW * MW_installed * 1/LF
+# Results in $
+# qF in MWh / $
+def consumptionSimple(qF, vF, deltaF, epsilonF, deltaE, cost_MW, x, area, eff, ressources, installed_capaciy_density, operationE, embodiedE1y): 
+    return sum((1-epsilonF*deltaF*vF)/qF*production(x, area, eff, ressources, operationE)) - capitalStockCost(x, area, installed_capaciy_density, deltaE, cost_MW)
 
+def capitalStockCost(x, area, installed_capaciy_density, deltaE, cost_MW):
+    return sum(x*area*installed_capaciy_density*deltaE*cost_MW)
+    
 def netEnergyScalar(x, area, c, k, ghi, dni, embodiedE1y_wind, operationE_wind, avail_wind):
     return netEnergyWind(x[0], area[0], x[3], x[4], c, k, embodiedE1y_wind, operationE_wind, avail_wind) + netEnergyPV(x[1], area[1], ghi) + netEnergyCSP(x[2], area[2], dni, x[5])
 # Net Energy = energy produced [MWh/an] - embodied energy in installed capacity
@@ -132,6 +172,11 @@ def embodiedEnergyWind(x, area, vr, n, embodiedE1y_wind):
     return x * area * installedCapacityDensityWind(vr, n) * embodiedE1y_wind
 def netEnergyWind(x, area, vr, n, c, k, embodiedE1y_wind, operationE_wind, avail_wind):
     return energyWind(x, area, vr, n, c, k, operationE_wind, avail_wind) - embodiedEnergyWind(x, area, vr, n, embodiedE1y_wind)
+def netEnergyWindOnly(x, area, c, k, embodiedE1y_wind, operationE_wind, avail_wind):
+    total = 0
+    for i in range(0, len(c)):
+        total += netEnergyWind(x[i*3], area[i], x[i*3+1], x[i*3+2], c[i], k[i], embodiedE1y_wind[i], operationE_wind[i], avail_wind[i]) 
+    return total
 
 def grossEnergyPV(x, area, ghi):
     return x * area * efficiency_PV * ghi * (365 * 24)                                                     
@@ -139,14 +184,23 @@ def embodiedEnergyPV(x,area):
     return x * area * installed_capacity_density_PV * embodiedE1y_PV
 def netEnergyPV(x, area, ghi):
     return grossEnergyPV(x,area,ghi) * (1 - operationE_PV) - embodiedEnergyPV(x, area) 
+def netEnergyPVOnly(x, area, ghi):
+    total = 0
+    for i in range(0, len(ghi)):
+        total += grossEnergyPV(x[i],area[i],ghi[i]) * (1 - operationE_PV) - embodiedEnergyPV(x[i], area[i]) 
+    return total
 
 def grossEnergyCSP(x, area, dni, sm):
     return x * area * efficiencyCSP(dni, sm) * dni * (365 * 24)
 def netEnergyCSP(x, area, dni, sm):
-    return grossEnergyCSP(x, area, dni, sm) * (1 - operationE_CSP) - eeCSP(x, area, sm)
+    return grossEnergyCSP(x, area, dni, sm) * (1 - operationE_CSP) - embodiedEnergyCSP(x, area, sm)
 def embodiedEnergyCSP(x, area, sm):
     return embodiedE1y_CSP_fixed * ratedPowerCSP(sm, x * area) + embodiedE1y_CSP_area * x * area / defaultCSP_area
-
+def netEnergyCSPOnly(x, area, dni):
+    total = 0
+    for i in range(0, len(dni)):
+        total += netEnergyCSP(x[i*2],area[i],dni[i],x[i*2+1])
+    return total
 # WIND
 def capacityFactor(c, k, vr):
     vf = 25.0; vc = 3.0;
@@ -190,6 +244,26 @@ def getIndexesSimpleModel(area):
                     indexes_cons.append([k - 1, k])
                 k += 1
     return (np.array(indexes), np.array(indexes_cons),  np.array(indexes_wind))
+
+def getIndexesConsumptionModel(area, operationE, deltaE, epsilonE):
+    indexes = []; indexes_cons = []; k = 0; indexes_wind = [];
+    deltaE_indexes = []; epsilonE_indexes = [];
+    for i in range(0, len(area) / 3):
+        for j in range(0, 3):
+            index = i * 3 + j
+            if area[i * 3 + j] > 0:
+                # Wind onshore
+                if j == 0 and operationE[index] == 0.035:
+                    deltaE_indexes.append(deltaE[j]); epsilonE_indexes.append(epsilonE[j]);
+                else:
+                    deltaE_indexes.append(deltaE[j+1]); epsilonE_indexes.append(epsilonE[j+1]);
+                indexes.append(index)
+                if j == 0:
+                    indexes_wind.append([k,index])
+                if j == 2 and indexes[len(indexes)-2] == index - 1:
+                    indexes_cons.append([k - 1, k])
+                k += 1
+    return (np.array(indexes), np.array(indexes_cons),  np.array(indexes_wind) ,np.array(deltaE_indexes), np.array(epsilonE_indexes))
 
 def getIndexes(area):
     ind_x = []; 

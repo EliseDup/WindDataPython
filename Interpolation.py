@@ -9,23 +9,18 @@ from Tkconstants import BOTTOM
 from scipy.interpolate.interpolate import interp1d
 import math
 def main():
-    techs = ("Wind_solar","Wind-onshore","Wind-offshore","mono-Si-PV","ST-salt-TES")
+    techs = ("wind_solar","Wind-onshore","Wind-offshore","mono-Si-PV","ST-salt-TES")
     for t in techs:
         print "---", t, "---"
         data = genfromtxt("../WindPotentialScala/"+t, delimiter='\t', dtype=None)
-        print "Gross Energy"
-        ge = interpolation(data[:,2],data[:,0],2,xname="Embodied Energy [EJ/year]",yname=t+" Production [EJ/year]")
+        print "Energy Delivered"
+        ge = interpolation(data[:,1],data[:,0],2,xname="Embodied Energy [EJ/year]",yname=t+" Production [EJ/year]")
         ge_max_x = -ge.coeffs[1]/(2*ge.coeffs[0])
+        print ge.coeffs[0],"\t",ge.coeffs[1],"\t",ge.coeffs[2]
+        
         print round(ge.coeffs[0],2),"x^2+",round(ge.coeffs[1],2),"x+",round(ge.coeffs[2],2)
         print "max from data", int(round(max(data[:,0])))
         print "maximum in (", int(round(ge_max_x)),",",int(round(ge(ge_max_x))),")"
-    
-        print "Net Energy"
-        ne = interpolation(data[:,2],data[:,1],2,xname="Embodied Energy [EJ/year]",yname=t+" Net Production [EJ/year]")
-        ne_max_x = -ne.coeffs[1]/(2*ne.coeffs[0])
-        print round(ne.coeffs[0],2),"x^2+",round(ne.coeffs[1],2),"x+",round(ne.coeffs[2],2)
-        print "max from data", int(round(max(data[:,1])))
-        print "maximum in (", int(round(ne_max_x)),",",int(round(ne(ne_max_x))),")"
     
     plt.show()
     print "---"
